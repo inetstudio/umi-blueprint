@@ -1,0 +1,8 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var umiHierarchyElement $variables */
+?>
+
+<?php if (isset($variables['src'])): ?>
+    <img src="<?=$variables['src'] ?? ''?>" alt="<?=$variables['alt'] ?? ''?>" />
+<?php endif; ?>

@@ -1,0 +1,33 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    /** @var umiHierarchyElement $page */
+    
+    $page = $variables['page'] ?? false;
+    $categories = $this->macros('catalog', 'getCategoryList', [null, $page->getId()]);
+?>
+
+<?php if (!empty($categories['items'])) : ?>
+
+    <?= $this->render($categories, 'modules/catalog/getCategoryList/default'); ?>
+
+<?php else : ?>
+
+    <?php $catalog = $this->macros('catalog', 'getSmartCatalog', [$page->getId()]); ?>
+
+    <div class="mt-catalog">
+        <div class="mt-catalog__wr">
+            <?php if ($page->getValue('sub_title')) : ?>
+            <div class="mt-catalog__header">
+                <?=$page->getValue('sub_title')?>
+            </div>
+            <?php endif; ?>
+
+            <?= $this->render($catalog, 'modules/catalog/getSmartCatalog/default'); ?>
+        </div>
+    </div>
+
+    <?= $page->getValue('descr'); ?>
+
+<?php endif; ?>
+

@@ -1,0 +1,43 @@
+<?php
+    /** @var umiTemplaterPHP $this */
+    /** @var array $variables */
+?>
+
+<div id="login" class="popup-message">
+    <form id="form-login" action="/udata//users/login_do_json/.json" method="post">
+        <div class="popup-form">
+            <div class="popup-form__header">
+                <?=$this->translate('authorization');?>
+            </div>
+            <div class="lr-form__span">
+                <div class="lr-form__header">
+                    <?=$this->translate('e-mail');?>
+                </div>
+                <div class="lr-form__cont">
+                    <input type="text" class="inpu-st" name="login" id="consents_email" placeholder="Введите E-mail"
+                           required
+                           data-msg="Заполните поле"
+                           data-rule-minlength="2"
+                           data-msg-minlength="Минимум 2 символа"
+                           data-rule-email="true"
+                           data-msg-email="Неверный e-mail">
+                </div>
+            </div>
+            <div class="lr-form__span">
+                <div class="lr-form__header">
+                    <?=$this->translate('password');?>
+                </div>
+                <div class="lr-form__cont">
+                    <input type="password" class="inpu-st" name="password" id="consents_password" placeholder="Пароль"
+                           required
+                           data-msg="Заполните поле"
+                           data-rule-minlength="6"
+                           data-msg-minlength="Минимум 6 символа">
+                </div>
+            </div>
+            <div class="popup-form__btn">
+                <input type="submit" value="<?=$this->translate('log_in');?>">
+            </div>
+        </div>
+    </form>
+</div>

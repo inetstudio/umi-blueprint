@@ -1,0 +1,38 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    /** @var umiHierarchyElement $page */
+    
+    $auth = \UmiCms\Service::Auth();
+    $page = $variables['page'] ?? false;
+    $mode = isset($variables['layout']);
+
+    if ($auth->isLoginAsGuest()) {
+        if ($page && $page->getAltName() == 'documents') {
+            $this->macros('content', 'redirect', [$this->getHomePageUrl()]);
+        }
+    }
+
+    // region user group redirect
+    if ($mode && !permissionsCollection::getInstance()->isSv()) {
+        // someone trying to change system data
+        $user = $this->getObjectById($auth->getUserId());
+        if ($user instanceof umiObject == false) return;
+
+        $objects = umiObjectsCollection::getInstance();
+
+        /* redirect blocked users to settings directory */
+        if (in_array($objects->getObjectIdByGUID('users-users-blocked'), $user->groups)) {
+            if ($page->getAltName() != 'settings') {
+                $this->macros('content', 'redirect', ['/cabinet/settings/']);
+            }
+        }
+    }
+    // endregion
+    
+    if (!$page) return;
+    
+    // custom page redirect
+    if ($redirect = $page->getValue('redirect')) {
+        $this->macros('content', 'redirect', [$redirect[0]->getId()]);
+    }

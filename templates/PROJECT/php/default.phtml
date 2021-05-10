@@ -1,0 +1,50 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+
+    // template debug mode
+    if (getRequest('debug-mode')) {
+        echo '<pre>' . print_r($variables, true) . '</pre>';
+    }
+
+    // check if permissions to this module - method pair is available to user
+    if (isset($variables['not-permitted'])) {
+        $this->render($variables, 'assets/redirect');
+    }
+
+    $this->initializeCommonVariables($variables);
+
+    // check if we are located in the system pages/methods
+    if (isset($variables['page'])) {
+        /** @var umiHierarchyElement $page */
+        $page = $variables['page'];
+
+        // trying to apply wrapper class on the current page if needed
+        $variables['data']['wrapper_class'] = $page->getValue('wrapper_class') ?: "";
+        // when we can't override wrapper class from modules data template
+        // we need a special conditions checks
+
+        // special content data types
+        if (($sdt = $this->isSpecialPageDataType($page)) && $sdt['status']) {
+            $variables['data']['wrapper_class'] = $sdt['wrapper'] ?? '';
+        }
+    } else {
+        $variables['data']['wrapper_class'] = "";
+    }
+    
+    $parent = $this->getImmediateParent($variables);
+
+    try {
+        $content = $this->render($variables, "modules/{$variables['module']}/{$variables['method']}/default");
+    } catch (Exception $e) {
+        $content = $e->getMessage();
+    }
+
+    $variables['data']['content'] = $content;
+    
+    // determine template layouts based on the current parent category
+    $layout = $parent ? $parent->getAltName() : false;
+    // replace them with the default basic template
+    $layout = $layout && in_array($layout, ['registration']) ? $layout : 'default';
+
+    echo $this->render($variables, "layouts/$layout");

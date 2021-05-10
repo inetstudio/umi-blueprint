@@ -1,0 +1,31 @@
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_php7.c>
+	php_flag engine off
+</IfModule>
+
+<IfModule mod_php5.c>
+	php_flag engine off
+</IfModule>
+
+<IfModule mod_version.c>
+    <IfVersion >= 2.4>
+        <FilesMatch "(?i)\.(php[2-5]?|cgi|pl|fcgi|fpl|phtm|phtml|shtml|asp|jsp|twig|tpl|xslt?|git|svn|htaccess|htaccess_old|htpasswd|gitignore|gitkeep|ini|log|conf|md|sql|lock|umi\.json)$">
+            Require all denied
+        </FilesMatch>
+    </IfVersion>
+
+    <IfVersion < 2.4>
+        <FilesMatch "(?i)\.(php[2-5]?|cgi|pl|fcgi|fpl|phtm|phtml|shtml|asp|jsp|twig|tpl|xslt?|git|svn|htaccess|htaccess_old|htpasswd|gitignore|gitkeep|ini|log|conf|md|sql|lock|umi\.json)$">
+            Deny from all
+        </FilesMatch>
+    </IfVersion>
+</IfModule>
+
+<IfModule !mod_version.c>
+    <FilesMatch "(?i)\.(php[2-5]?|cgi|pl|fcgi|fpl|phtm|phtml|shtml|asp|jsp|twig|tpl|xslt?|git|svn|htaccess|htaccess_old|htpasswd|gitignore|gitkeep|ini|log|conf|md|sql|lock|umi\.json)$">
+        Deny from all
+    </FilesMatch>
+</IfModule>

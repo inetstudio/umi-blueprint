@@ -1,0 +1,29 @@
+<?php
+    /** @var umiTemplaterPHP $this */
+    /** @var array $variables */
+    $restoreCode = (string) getRequest('restore_code');
+    $checkRestore = $restoreCode ? $this->macros('users', 'checkRestore', [$restoreCode]) : [];
+    $userId = $checkRestore['user_id'] ?? false;
+    if ($userId)
+        $this->macros('users', 'restore', [$userId]);
+?>
+
+<?php if ($restoreCode): ?>
+    <div class="popup-wrap reg-popup-wrap">
+        <div class="popup-default reg-popup">
+            <div class="close-popup-btn"></div>
+            <p class="popup-title">
+            
+            <?php if ($userId): ?>
+                
+                Новый пароль выслан вам на почту
+            
+            <?php else: ?>
+                
+                Неверный код восстановления
+            
+            <?php endif ?>
+            </p>
+        </div>
+    </div>
+<?php endif ?>

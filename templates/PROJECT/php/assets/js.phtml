@@ -1,0 +1,13 @@
+<?php
+    /** @var umiTemplaterPHP|ViewPhpExtension $this */
+    /** @var array $variables */
+
+    $templatePath = cmsController::getInstance()->getResourcesDirectory();
+    // collect all js files from a folder
+    $dir = new umiDirectory("{$templatePath}public/js/critical/");
+    $libs = $dir->getFiles();
+?>
+
+<?php foreach ($libs as $lib => $path) : ?>
+    <script src="<?= $this->asset("{$dir->getLocalPath()}/{$lib}"); ?>"></script>
+<?php endforeach; ?>

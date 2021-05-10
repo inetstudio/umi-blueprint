@@ -1,0 +1,14 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    
+?>
+
+<div class="personal-data-block clear-item">
+    <form action="/udata//users/settings_do.json" id="profile-edit-form" method="POST">
+        
+        <?= $this->render($variables,'modules/users/settings/default/personal-info') ?>
+        <?= $this->render($variables,'modules/users/settings/default/contact-info') ?>
+        
+    </form>
+</div>

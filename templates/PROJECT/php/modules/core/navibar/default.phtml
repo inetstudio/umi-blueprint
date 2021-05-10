@@ -1,0 +1,19 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+
+    $breadcrumbs = $variables['items'] ?? [];
+    $last = count($breadcrumbs) - 1;
+?>
+
+<div class="mt-crubs__wr">
+    <div class="mt-crubs">
+        <?php foreach ($breadcrumbs as $keyItem => $item) : ?>
+        <?php if ($keyItem == $last) : ?>
+            <strong><?=$item['text']?></strong>
+        <?php else : ?>
+            <a href="<?=$item['link']?>"><strong><?=$item['text']?></strong></a> <span>></span>
+        <?php endif; ?>
+        <?php endforeach; ?>
+    </div>
+</div>

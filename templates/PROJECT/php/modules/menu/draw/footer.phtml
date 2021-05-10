@@ -1,0 +1,13 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+?>
+
+<ul class="mt-footer__menu">
+    <?php foreach ($variables['item'] ?? [] as $item) :
+        $active = !empty($item['status']) ? 'class="active"' : '';
+        ?>
+        <li><a href="<?=$item['link']?>" <?=$active;?>><?=$item['text']?></a></li>
+    <?php endforeach; ?>
+</ul>
+

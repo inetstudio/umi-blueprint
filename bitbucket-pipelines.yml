@@ -1,0 +1,63 @@
+image: samueldebruyn/debian-git
+
+.git_deploy_paths: &deploy_paths_anchor |
+  export DEV_HOST=inet.digital
+  export DEV_PATH=/var/www/PROJECT.inet.digital/
+  export PROD_HOST=
+  export PROD_PATH=
+
+.env_exports: &env_anchor |
+  export USER=$(cat public/env/user)
+  export HOST=$(cat public/env/host)
+  export SSH_PATH=$(cat public/env/path)
+  export DEP_MODE=$(cat public/env/dep_mode)
+  export ASSETS_PATH=templates/PROJECT/public/js/
+
+definitions:
+  steps:
+    - step: &define-variables
+        name: Define environment variables based on the current branch
+        script:
+          - *deploy_paths_anchor
+          - if [ $BITBUCKET_BRANCH == "master" ]; then
+          -   export USER=$MITASU_USERNAME
+          -   export HOST=$PROD_HOST
+          -   export SSH_PATH=$PROD_PATH
+          -   export DEP_MODE="init -v --insecure"
+          - else
+          -   export USER=$SELECTEL_USERNAME
+          -   export HOST=$DEV_HOST
+          -   export SSH_PATH=$DEV_PATH
+          -   export DEP_MODE="init -v --insecure"
+          - fi
+          - mkdir -p public/env
+          - printf $USER > public/env/user
+          - printf $HOST > public/env/host
+          - printf $SSH_PATH > public/env/path
+          - printf '%s' "$DEP_MODE" > public/env/dep_mode
+        artifacts:
+          - public/env/**
+    - step: &deploy-ssh
+        name: Deploy to server via GIT through SSH protocol
+        deployment: test
+        script:
+          - *env_anchor
+          - apt-get update && apt-get -qq install git-ftp
+          - ssh-keygen -y -f /opt/atlassian/pipelines/agent/ssh/id_rsa > id_rsa.pub
+          - git ftp ${DEP_MODE} --user $USER --key /opt/atlassian/pipelines/agent/ssh/id_rsa --pubkey /opt/atlassian/pipelines/agent/build/id_rsa.pub sftp://$HOST$SSH_PATH
+          - pipe: atlassian/ssh-run:0.2.5
+            variables:
+              SSH_USER: $USER
+              SERVER: $HOST
+              COMMAND: 'cd ${SSH_PATH}; php typeInstaller.php'
+
+pipelines:
+  branches:
+    master:
+      - step: *define-variables
+      - step:
+          <<: *deploy-ssh
+          deployment: production
+    dev:
+      - step: *define-variables
+      - step: *deploy-ssh

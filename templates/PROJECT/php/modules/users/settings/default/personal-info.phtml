@@ -1,0 +1,34 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    
+    $templatePath = cmsController::getInstance()->getResourcesDirectory(true);
+    $userId = $variables['user']['id'];
+    $user = $this->getObjectById($userId);
+    $avatar = $user->getValue('avatar') ? $user->getValue('avatar')->getFilePath() : "./images/cms/no_avatar.png";
+?>
+
+<div class="data-block block-left">
+    <p class="account-title-default">Личные данные</p>
+    
+    <div class="account-img-wrap">
+        <div class="file-button">
+            <input id="file-input" type="file" name="avatar" accept="image/x-png, image/gif, image/jpeg">
+            <?= $this->render($this->macros('system', 'makeThumbnailFull',
+                ['path' => $avatar, '90', '90']),'modules/system/makeThumbnailFull/avatar'); ?>
+            <span class="loader-wrap">
+                <img src="<?=$templatePath?>img/ajax-loader.gif" alt="loader-img" class="loader-img">
+            </span>
+        </div>
+    </div>
+
+    <div class="info-wrap">
+
+    </div>
+    
+    <div class="info-inputs">
+
+    </div>
+</div>
+
+

@@ -1,0 +1,31 @@
+<?php
+    /** @var umiTemplaterPHP|ViewPhpExtension $this */
+    /** @var array $variables */
+    /** @var umiHierarchyElement $page */
+
+    $page = $variables['page'] ?? false;
+
+    /* system redirects */
+    $this->render($variables, 'assets/redirect');
+    
+    $wrapperClass = $variables['data']['wrapper_class'] ?? '';
+?>
+
+<!DOCTYPE html>
+<html lang="ru-RU">
+    <?= $this->render($variables, 'assets/head'); ?>
+
+    <body>
+        <div class="<?= $wrapperClass; ?>">
+            <?= $this->render($variables, 'assets/header'); ?>
+
+            <?= $variables['data']['content']; ?>
+
+            <?= $this->render($variables, 'assets/footer'); ?>
+        </div>
+
+        <?= $this->render($variables, 'assets/popups') ?>
+
+        <?= $this->render($variables, 'assets/js') ?>
+    </body>
+</html>

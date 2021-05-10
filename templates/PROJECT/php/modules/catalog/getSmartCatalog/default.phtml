@@ -1,0 +1,26 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $catalog */
+
+    $catalog = $variables['items'] ?? [];
+?>
+
+<div class="mt-catalog__list">
+    <?php foreach ($catalog as $item): ?>
+
+        <div class="mt-catalog__item">
+            <a href="<?=$item['link']?>" class="mt-catalog__prod">
+                <div class="mt-catalog__prod__img">
+                    <img src="<?=$item['image']['src'] ?? ''?>" alt="<?=$item['image']['alt'] ?? ''?>" />
+                </div>
+                <div class="mt-catalog__prod__body">
+                    <strong><?=$item['title']?></strong>
+                    <?=$item['text']?>
+                </div>
+            </a>
+        </div>
+
+    <?php endforeach ?>
+</div>
+
+

@@ -1,0 +1,21 @@
+{
+  "name": "inetstudio/umi-blueprint",
+  "description": "Inet Production internal blueprint for UMI.CMS projects",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Rakhmankin M.",
+      "email": "support@inetstudio.ru"
+    },
+    {
+      "name": "Seredinskiy Maxim",
+      "email": "support@inetstudio.ru"
+    }
+  ],
+  "require": {
+    "mailgun/mailgun-php" :  "2.8.1",
+    "phpoffice/phpspreadsheet" :  "1.11.0",
+    "sentry/sdk" : "2.1.0"
+  }
+}

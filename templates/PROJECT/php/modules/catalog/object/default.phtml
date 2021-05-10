@@ -1,0 +1,51 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    /** @var umiHierarchyElement $product */
+
+    $product = $variables['page'] ?? $this->getPageById($variables['page_id']);
+    /** @var umiImageFile $image */
+    $image = $product->getValue('header_pic');
+
+    $offers = $this->macros('catalog', 'getProductOffers', [$product]);
+    $sizes = array_reduce($offers, function ($sizes, $offer) {
+        $sizes[$offer['id']] = [
+           'weight' => $offer['weight'],
+           'image' => $offer['trade_offer_image'],
+        ];
+        return $sizes;
+    }, []);
+    $activeOffer = array_shift($offers);
+    $activeImage = !empty($activeOffer) ? ".".$activeOffer['trade_offer_image' ] ?? '' : $image->getFilePath();
+?>
+
+<?= $this->render($this->macros('core', 'navibar'), 'modules/core/navibar/default'); ?>
+
+<div class="mt-cart">
+    <div class="mt-cart__wr">
+        <div class="mt-cart__left">
+            <div class="mt-cart__img">
+                <?= $this->render(
+                    $this->macros('system', 'makeThumbnailFull', ['path' => $activeImage, '294', '373']),
+                    'modules/system/makeThumbnailFull/default'
+                ); ?>
+                <ul class="mt-cart__size">
+                    <?php foreach ($sizes as $id => $size) :
+                        $active = $id == $activeOffer['id'] ? 'class="active"' : '';?>
+                    <li>
+                        <a href="#" data-image="<?=$size['image']?>" <?=$active;?>>
+                            <?=$size['weight']?>L
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <div class="mt-cart__detals">
+                    <?= $this->render($product, 'modules/catalog/object/downloads'); ?>
+                </div>
+            </div>
+        </div>
+        <div class="mt-cart__body">
+            <?= $product->getValue('content'); ?>
+        </div>
+    </div>
+</div>

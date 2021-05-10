@@ -1,0 +1,16 @@
+<?php
+    /** @var umiTemplaterPHP $this */
+    /** @var array $variables */
+
+    $html = '';
+    if (isset($variables['items'])) {
+        $html .= '<p style="color:red">';
+        $html .= '';
+        foreach ($variables['items'] as $error) {
+            $html .= "{$error['message']}";
+        }
+        $html .= '</p><br/>';
+    }
+
+    echo $html;
+?>

@@ -1,0 +1,45 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    /** @var umiHierarchyElement|bool $page */
+
+    $page = $variables['page'] ?? false;
+    /** @var SeoPhpExtension $seo */
+    $seo = $this->getCommonVar('seo');
+    $templatePath = $this->getResourceDirectory();
+    $title = $seo->getMetaTitle($variables) ?: ($page ? $page->getValue('h1') : '');
+    $favicon = $seo->getFaviconPath();
+?>
+
+<head>
+    <meta charset="utf-8">
+    <title><?= $title ?></title>
+
+    <!-- SEO -->
+    <meta name="description" content="<?= $seo->getMetaDescription($variables); ?>" />
+    <meta name="keywords" content="<?= $seo->getMetaKeywords($variables) ?>" />
+    <meta name="rating" content="" />
+    <meta name="author" content="" />
+    <?= $seo->getMetaRobots($variables); ?>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:site_name" content="Garnier" />
+    <meta property="og:url" content="" />
+    <meta property="og:image" content="" />
+
+    <?= $seo->getCanonicalLinkTag($variables); ?>
+
+    <!-- FAVICON -->
+    <link rel="icon" href="<?=$favicon;?>" />
+    <link rel="shortcut icon" href="<?=$favicon;?>" />
+    <link rel="apple-touch-icon" href="<?=$favicon;?>" />
+
+    <!-- CONFIG -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <link rel="stylesheet" href="<?= $this->asset($templatePath.'public/css/main.css'); ?>">
+</head>

@@ -1,0 +1,4 @@
+bitbucket-pipelines.yml
+/templates/PROJECT/public/html/*
+/templates/PROJECT/src/*
+/vendor/*

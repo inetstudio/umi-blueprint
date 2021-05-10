@@ -1,0 +1,20 @@
+<?php
+    /** @var umiTemplaterPHP $this */
+    /** @var array $variables */
+?>
+
+<div class="popup-wrap pass-recovery-wrap">
+    <div class="popup-default pass-recovery-popup">
+        <div class="close-popup-btn"></div>
+
+        <p class="popup-title">Восстановить пароль</p>
+
+        <form action="/udata//users/forget_do/.json" method="post" class="pass-recovery-form ajax-form" id="pass-recovery-form">
+            <div class="input-wrap">
+                <input type="text" class="default-input" name="login" value="" placeholder="Ваш Логин">
+            </div>
+
+            <input type="submit" class="blue-btn big-text" value="ВЫСЛАТЬ ИНСТРУКЦИЮ">
+        </form>
+    </div>
+</div>

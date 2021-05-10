@@ -1,0 +1,70 @@
+<?php
+/**
+ * Created by Maxim Seredinskiy, Maxim Rakhmankin
+ * @author Maxim Rakhmankin, Maxim Seredinskiy <support@inetstudio.ru>
+ * @copyright Copyright (c) 2021, Maxim Seredinskiy, Maxim Rakhmankin
+ */
+
+/** @noinspection PhpIncludeInspection */
+require_once dirname(__FILE__) . '/standalone.php';
+require_once CURRENT_WORKING_DIR . '/templates/inet/installer/extendedInstaller.php';
+
+use \iOutputBuffer as iBuffer;
+use UmiCms\Service;
+
+class TypeExtendingInstaller extends ExtendedInstaller {
+    /** @var string TYPES_EXTENSIONS_DIR директория для типов */
+    const TYPES_EXTENSIONS_DIR = CURRENT_WORKING_DIR . '/templates/inet/types/';
+
+    /** @var iBuffer $buffer буффер обмена */
+    protected $buffer;
+
+    /**
+     * TypeExtendingInstaller constructor.
+     * @throws coreException
+     * @throws publicException
+     */
+    public function __construct() {
+        parent::__construct();
+
+        $this->buffer = Service::Response()->getCurrentBuffer();
+    }
+
+    /** Execute creation in all forms classes */
+    public function executeExtensions() {
+        // scan forms classes
+        $this->scanExtensionsFolder(self::TYPES_EXTENSIONS_DIR);
+
+        // get all extensions
+        foreach (get_declared_classes() as $class) {
+            if (is_subclass_of($class, __CLASS__)) $this->extensions[] = $class;
+        }
+
+        // plug and execute all extensions classes
+        self::plugAndExecuteAllExtensions();
+    }
+
+    /**
+     * Execute extensions creation methods
+     */
+    private function plugAndExecuteAllExtensions() {
+        foreach ($this->extensions as $extension) {
+            $extensionClass = new $extension();
+            if ($extensionClass instanceof ITypeExtension) {
+                $extensionClass->execute();
+            }
+        }
+    }
+
+    /**
+     * @return void
+     */
+    public function getBuffer() {
+        $this->buffer->push('{success: true}');
+        $this->buffer->option('generation-time', true);
+        $this->buffer->end();
+    }
+}
+$extend = new TypeExtendingInstaller();
+$extend->executeExtensions();
+$extend->getBuffer();

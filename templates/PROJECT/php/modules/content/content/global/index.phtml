@@ -1,0 +1,12 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+    /** @var umiHierarchyElement $page */
+
+    $page = $variables['page'];
+?>
+
+<?= $page->getValue('content'); ?>
+
+<?= $page->getValue('additional_info'); ?>
+

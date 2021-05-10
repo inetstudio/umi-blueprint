@@ -1,0 +1,37 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $variables */
+
+    use UmiCms\Service;
+
+    $permissions = permissionsCollection::getInstance();
+    // fix for cases with 'all' permissions checks
+    $guest = Service::SystemUsersPermissions()->getGuestUserId();
+
+    $user = $this->getObjectById(Service::Auth()->getUserId());
+    $groups = $user->getValue('groups');
+    array_push($groups, $guest);
+    
+    $upperCase = $variables['to_upper_case'] ?? false;
+    $menu = [];
+?>
+
+<?php foreach ($variables['items'] ?? [] as $item) :
+    $page = $this->getPageById($item['id']);
+    $active = !empty($item['status']) ? 'class="active"' : '';
+    $h1 = $page->getValue('h1');
+
+    // get page permissions
+    $pagePerm = $permissions->getUsersByElementPermissions($item['id']);
+    // check user permissions for this page
+    if ( !array_intersect($groups, $pagePerm) && !$permissions->isSv() ) continue;
+
+    $title = $upperCase ? mb_strtoupper($h1) : $h1;
+
+    $menu[] = "<a href=\"{$item['link']}\" $active><strong>$title</strong></a>"
+    ?>
+<?php endforeach; ?>
+
+<div class="mt-submenu">
+    <?= implode(' <span>|</span> ', $menu); ?>
+</div>

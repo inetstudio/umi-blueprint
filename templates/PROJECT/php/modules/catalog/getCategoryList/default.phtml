@@ -1,0 +1,25 @@
+<?php
+    /** @var umiTemplaterPHP|sitePhpExtension $this */
+    /** @var array $categories */
+
+    $categories = $variables['items'] ?? [];
+?>
+
+<?php foreach ($categories as $item): ?>
+    <?php
+    $category = $this->getPageById($item['id']);
+    $image = $this->getImagePath($category, 'header_pic');
+    ?>
+    <a href="<?=$item['link']?>" class="mt-image anchor-page mt-image--top lazy">
+        <?= $this->render(
+            $this->macros('system', 'makeThumbnailFull', ['path' => $image, 'width' => 'auto', 'height' => 'auto']),
+            'modules/system/makeThumbnailFull/default'
+        ); ?>
+        <span class="mt-image__header">
+            <?=$item['text']?>
+        </span>
+    </a>
+<?php endforeach ?>
+
+
+
