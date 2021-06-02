@@ -1,16 +1,42 @@
-# These are some examples of commonly ignored file patterns.
-# You should customize this list as applicable to your project.
-# Learn more about .gitignore:
-#     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
-
+# environment files
 .idea
-/sys-temp/
-/files/
-/vendor/
-/images/
-/styles/
-composer.phar
+**/.DS_Store
+.env
+docker-compose.override.yml
+/id_vl
 
-/templates/PROJECT/public/html/*
-/classes/system/*
-/classes/vendor/*
+# track only using classes
+classes/**/*
+classes/components/*
+
+classes/components/data/
+classes/components/users/
+!/classes/components/trainings/
+!classes/components/**/custom*
+
+!/classes/components/custom.php
+
+# uploads
+/files/
+
+# libraries
+/vendor/
+
+# all styles except icons
+styles/**/
+!styles/skins/modern/design/img/tree/
+
+# umi installation files
+sys-temp/
+*.ini
+images/
+templates/.htaccess
+templates/PROJECT/public/html/*
+.htaccess
+index.php
+install.php
+installer.php
+installed
+install.log
+standalone.php
+umi.nginx.conf

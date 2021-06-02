@@ -12,5 +12,12 @@
 
 - change the folder template name of you `PROJECT` inside _templates_ folder
 - `config.ini` -- replace `PROJECT` with the name of you project folder
-- all resources need to be placed inside `../public/` folder
+- all resources (js/css/fonts/images etc.) are placed in `../public/` folder >> inside `PROJECT` folder
 - `sitePhpExtension` class -- replace `PROJECT` with correct settings _"container_id"_
+- add all dependencies to `composer.json` and run `composer intall` in root folder
+
+<p><strong>Prepare virtual machine</strong></p>
+
+- `.env.local` -- replace `placeholder` values with the real data
+- cp .env.local .env
+- docker-compose up -d
