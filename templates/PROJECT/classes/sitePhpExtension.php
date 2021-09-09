@@ -16,7 +16,7 @@
         /**
          * Инициализирует общие переменные для шаблонов.
          *
-         * @param array $variables глобальные переменные запроса
+         * @param array $variables Глобальные переменные запроса
          */
         public function initializeCommonVariables(array $variables) {
             $templateEngine = $this->getTemplateEngine();
@@ -30,7 +30,7 @@
         }
 
         /**
-         * Убирает кэш браузера с обновленных ассетов (js / css / img).
+         * Убирает кэш браузера с обновленных асетов (js / css / img).
          *
          * @param $location
          * @return string
@@ -48,7 +48,7 @@
          * @param bool $strToUpperCase
          * @return mixed
          */
-        public function getPointsWord(int $number, $strToUpperCase = false) {
+        public function getPointsWord(int $number, bool $strToUpperCase = false) {
             $number = (!$number) ? 0 : $number;
             $word = $this->get_correct_str($number, 'балл', 'балла', 'баллов');
 
@@ -96,7 +96,7 @@
          * @param bool        $webMode
          * @return string
          */
-        public function getImagePath(iUmiEntinty $entity, string $field = 'photo', $webMode = false): string {
+        public function getImagePath(iUmiEntinty $entity, string $field = 'photo', bool $webMode = false): string {
             /** @var iUmiImageFile $image */
             $image = $entity->getValue($field);
 
@@ -132,7 +132,7 @@
         /**
          * Возвращает родителя страницы, саму страницу (если это и есть родитель) или false
          *
-         * @param array $variables глобальные переменные запроса
+         * @param array $variables Глобальные переменные запроса
          * @return bool|umiHierarchyElement
          */
         public function getImmediateParent(array $variables) {
@@ -148,8 +148,8 @@
         /**
          * Возвращает родителей страницы, саму страницу (если это и есть родитель) или false
          *
-         * @param array $variables глобальные переменные запроса
-         * @return array|bool|umiHierarchyElement
+         * @param array $variables Глобальные переменные запроса
+         * @return array|bool
          */
         public function getParents(array $variables) {
             if (!empty($variables['parents'])) {
@@ -164,7 +164,7 @@
          * @return string
          * @throws coreException
          */
-        public function getParentPathById($parentId = 0): string {
+        public function getParentPathById(int $parentId = 0): string {
             $parent = umiHierarchy::getInstance()->getElement($parentId);
 
             if ($parent instanceof iUmiHierarchyElement) {
@@ -182,7 +182,7 @@
          * @param bool $firstParam
          * @return string
          */
-        public function getCurrentPath($firstParam = false): string {
+        public function getCurrentPath(bool $firstParam = false): string {
             $currentUrl = $this->getTemplateEngine()->getCommonVar('request_uri');
             $token = $firstParam ? '&' : '?';
 
@@ -194,11 +194,11 @@
          * Возвращает путь до именного шаблона.
          * Возможна перегрузка шаблона для конкретного бренда.
          *
-         * @param array $variables
+         * @param array  $variables
          * @param string $basePath
          * @return string
          */
-        public function getNamedTemplate(array $variables, $basePath = 'modules/content/content'): string {
+        public function getNamedTemplate(array $variables, string $basePath = 'modules/content/content'): string {
             $page = $variables['page'];
             $parent = $this->getImmediateParent($variables);
             if ($parent instanceof umiHierarchyElement) {
@@ -218,11 +218,11 @@
         }
 
         /**
-         * @param array $variables
+         * @param array  $variables
          * @param string $path
          * @return bool|string
          */
-        public function getAssetsTemplate(array $variables, $path = '') {
+        public function getAssetsTemplate(array $variables, string $path = '') {
             $parent = $this->getImmediateParent($variables);
             if ($parent instanceof umiHierarchyElement) {
                 // get templates directory
@@ -359,7 +359,7 @@
          * @param string $prefix
          * @return string
          */
-        public function getCabinetLink($prefix = ''): string {
+        public function getCabinetLink(string $prefix = ''): string {
             return $this->getTemplateEngine()->getCommonVar('pre_lang') . '/cabinet/';
         }
     
@@ -368,7 +368,7 @@
          * @param string $prefix
          * @return string
          */
-        public function getCommonFeedbackLink($prefix = ''): string {
+        public function getCommonFeedbackLink(string $prefix = ''): string {
             return $this->getTemplateEngine()->getCommonVar('pre_lang') . '/feedback/';
         }
 
@@ -403,7 +403,7 @@
          * @return array
          * @throws coreException
          */
-        private function createItemsArray(selector $selector, $options = []): array {
+        private function createItemsArray(selector $selector, array $options = []): array {
             $items = [];
             /** @var umiObject $item */
             foreach ($selector->result() as $item) {

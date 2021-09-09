@@ -1,4 +1,8 @@
-image: samueldebruyn/debian-git
+image: bitnami/git
+
+.sentry_project: &sentry_project_anchor |
+  export SENTRY_PROJECT_BACKEND=PROJECT-backend
+  export SENTRY_PROJECT_FRONTEND=PROJECT-frontend
 
 .git_deploy_paths: &deploy_paths_anchor |
   export DEV_HOST=inet.digital
@@ -15,12 +19,27 @@ image: samueldebruyn/debian-git
 
 definitions:
   steps:
+    - step: &versioned
+        name: Make deploy version
+        script:
+          - apt-get -y install tzdata
+          - export VERSION=$(TZ=":Europe/Moscow" date +v%y.%-m.%-d%-H%M)
+          - printf $VERSION > public/release
+        artifacts:
+          - public/release
+    - step: &tagging
+        name: Make a tag from deploy version
+        script:
+          - apt-get update && apt-get install -y git
+          - export VERSION=$(cat public/release)
+          - git tag -a ${VERSION} -m "Build ${BITBUCKET_BUILD_NUMBER}"
+          - git push origin --tags
     - step: &define-variables
         name: Define environment variables based on the current branch
         script:
           - *deploy_paths_anchor
-          - if [ $BITBUCKET_BRANCH == "master" ]; then
-          -   export USER=$MITASU_USERNAME
+          - if [ $BITBUCKET_BRANCH == "production" ]; then
+          -   export USER=$PROD_USERNAME
           -   export HOST=$PROD_HOST
           -   export SSH_PATH=$PROD_PATH
           -   export DEP_MODE="init -v --insecure"
@@ -45,19 +64,68 @@ definitions:
           - apt-get update && apt-get -qq install git-ftp
           - ssh-keygen -y -f /opt/atlassian/pipelines/agent/ssh/id_rsa > id_rsa.pub
           - git ftp ${DEP_MODE} --user $USER --key /opt/atlassian/pipelines/agent/ssh/id_rsa --pubkey /opt/atlassian/pipelines/agent/build/id_rsa.pub sftp://$HOST$SSH_PATH
-          - pipe: atlassian/ssh-run:0.2.5
+          - apt-get install libev-dev -y
+          - pipe: atlassian/ssh-run:0.3.1
             variables:
               SSH_USER: $USER
               SERVER: $HOST
-              COMMAND: 'cd ${SSH_PATH}; php typeInstaller.php'
-
+              COMMAND: 'cd ${SSH_PATH}; bash ./deploy-out.sh'
+              ENV_VARS: >-
+                BRANCH=${BITBUCKET_BRANCH}
+                ENVS_PATH=${ASSETS_PATH}
+    - step: &deploy-assets
+        name: Deploy to server via SCP using SSH credentials
+        script:
+          - *env_anchor
+          - pipe: atlassian/scp-deploy:0.3.12
+            variables:
+              USER: $USER
+              SERVER: $HOST
+              REMOTE_PATH: '${SSH_PATH}${ASSETS_PATH}'
+              LOCAL_PATH: '${ASSETS_PATH}*'
+              DEBUG: 'true'
+    - step: &build-assets
+        name: Build assets
+        image: node:15
+        script:
+          - apt-get update && apt-get install -y git
+          - cd templates/PROJECT/
+          - npm install
+          - npm run $BITBUCKET_BRANCH
+        artifacts:
+          - templates/PROJECT/js/**
+    - step: &sentry
+        name: Sentry Release & Deploy
+        image: getsentry/sentry-cli
+        script:
+          - *sentry_project_anchor
+          - if [ $BITBUCKET_BRANCH == "production" ]; then
+          -   export SENTRY_ENV="production"
+          -   export VERSION=$(cat public/release)
+          -   export SENTRY_VERSION=$VERSION-$VERSION_POSTFIX
+          - else
+          -   export SENTRY_ENV="test"
+          -   export SENTRY_VERSION=$BITBUCKET_COMMIT
+          - fi
+          - sentry-cli releases -o "${SENTRY_ORG}" new -p "${SENTRY_PROJECT_BACKEND}" -p "${SENTRY_PROJECT_FRONTEND}" "${SENTRY_VERSION}"
+          - sentry-cli releases -o "${SENTRY_ORG}" set-commits --auto "${SENTRY_VERSION}"
+          - sentry-cli releases -o "${SENTRY_ORG}" finalize "${SENTRY_VERSION}"
+          - sentry-cli releases -o "${SENTRY_ORG}" deploys "${SENTRY_VERSION}" new -e "${SENTRY_ENV}"
 pipelines:
   branches:
-    master:
+    production:
+      - step: *versioned
       - step: *define-variables
       - step:
           <<: *deploy-ssh
           deployment: production
+      - step: *build-assets
+      - step: *deploy-assets
+      - step: *sentry
+      - step: *tagging
     dev:
       - step: *define-variables
       - step: *deploy-ssh
+      - step: *build-assets
+      - step: *deploy-assets
+      - step: *sentry

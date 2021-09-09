@@ -6,12 +6,8 @@
     {
         /**
          * Отправляет письмо через UmiMail
-         *
-         * @param string $emails
-         * @param string $subject
-         * @param string $content
-         * @param string $filePath
-         * @param array $tags
+
+         * @inheritdoc
          * @return mixed
          * @throws Exception
          */
@@ -24,8 +20,9 @@
             $uMail->setFrom($emailFrom, $fioFrom);
             $uMail->setSubject($subject);
             $uMail->setContent($content);
-    
-            foreach (explode(',', $emails) as $address) {
+
+            $emails = is_array($emails) ? $emails : [$emails];
+            foreach ($emails as $address) {
                 $address = trim($address);
                 if ($address)
                     $uMail->addRecipient($address);

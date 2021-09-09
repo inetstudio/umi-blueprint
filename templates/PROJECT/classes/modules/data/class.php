@@ -46,19 +46,19 @@ class data_custom extends def_module {
      * @return array|bool
      * @throws Exception
      */
-    public static function processBase64Image($data = '') {
+    public static function processBase64Image(string $data = '') {
         if (preg_match('/^data:image\/(\w+);base64,/', $data, $type)) {
             $data = substr($data, strpos($data, ',') + 1);
             $type = strtolower($type[1]); // jpg, png, gif
 
             if (!in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
-                throw new \Exception('invalid image type');
+                throw new Exception('invalid image type');
             }
 
             $data = base64_decode($data);
 
             if ($data === false) {
-                throw new \Exception('base64_decode failed');
+                throw new Exception('base64_decode failed');
             }
         } else {
             return false;
@@ -91,7 +91,7 @@ class data_custom extends def_module {
      * @return array
      * @throws Exception
      */
-    public function uploadFile($files = [], $targetFolder = "./files/uploads/"): array {
+    public function uploadFile(array $files = [], string $targetFolder = "./files/uploads/"): array {
         $umiErrors = [
             0 => "umi-error-file-load",
             1 => "umi-error-all-params",
@@ -127,7 +127,8 @@ class data_custom extends def_module {
             switch ($fileError) {
                 case 1:
                 case 2:
-                    $allowedSize = cmsController::getInstance()->getModule('data')->getAllowedMaxFileSize();
+                    /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+                $allowedSize = cmsController::getInstance()->getModule('data')->getAllowedMaxFileSize();
                     $formattedError = sprintf(getLabel($phpErrors[$fileError], 'content/ext'), $allowedSize);
                 break;
                 default:
@@ -193,7 +194,7 @@ class data_custom extends def_module {
      * @param string     $property
      * @return bool|umiObject
      */
-    protected static function checkTypeOfValue(iUmiObject $object, $property = '') {
+    protected static function checkTypeOfValue(iUmiObject $object, string $property = '') {
         $user = $object->getValue($property);
         if (is_numeric($user)) {
             $objects = umiObjectsCollection::getInstance();
@@ -212,7 +213,6 @@ class data_custom extends def_module {
      * @throws privateException
      */
     private function createDocumentPage(umiFile $file) {
-        $cmsController = cmsController::getInstance();
         $hierarchyTypes = umiHierarchyTypesCollection::getInstance();
         $hierarchy = umiHierarchy::getInstance();
 

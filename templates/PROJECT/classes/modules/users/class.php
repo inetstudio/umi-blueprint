@@ -17,7 +17,7 @@ class users_custom extends def_module {
      * @return mixed
      * @throws baseException
      * @throws coreException
-     * @throws publicAdminException если авторизация не удалась через административную панель
+     * @throws publicAdminException Если авторизация не удалась через административную панель
      */
     public function login_do_json(): array {
         $login = htmlspecialchars(trim(getRequest('login')));
@@ -64,7 +64,7 @@ class users_custom extends def_module {
     /**
      * Обрабатывает результат неудачной авторизации
      * в зависимости от режима работы системы.
-     * @param string $login введенный логин
+     * @param string $login Введенный логин
      * @param string $password введенный пароль
      * @return mixed
      * @throws publicAdminException
@@ -80,13 +80,13 @@ class users_custom extends def_module {
 
     /**
      * Отправляет письмо с кодом активации для восстановления пароля
-     * @param string $template имя шаблона для tpl шаблонизатора
+     * @param string $template Имя шаблона для tpl шаблонизатора
      * @return mixed
      * @throws baseException
      * @throws coreException
      * @throws selectorException
      */
-    public function forget_do($template = 'default'): array {
+    public function forget_do(string $template = 'default'): array {
         $module = $this->module;
         static $macrosResult;
         $result = ['success' => true, 'message' => getLabel('error-new-password-sent-if-user-exist')];
@@ -187,7 +187,7 @@ class users_custom extends def_module {
      * @param bool $activateCode
      * @return mixed
      */
-    public function checkRestore($activateCode = false): array {
+    public function checkRestore(bool $activateCode = false): array {
         if (!$activateCode) {
             $activateCode = (string) getRequest('param0');
             $activateCode = trim($activateCode);
@@ -213,14 +213,14 @@ class users_custom extends def_module {
      * Восстанавливает доступ пользователя и отправляет ему
      * письмо с данными для доступа
      * @param null   $userId
-     * @param string $template имя шаблона для tpl шаблонизатора
+     * @param string $template Имя шаблона для tpl шаблонизатора
      * @return mixed
      * @throws ErrorException
      * @throws WrongAlgorithmException
      * @throws baseException
      * @throws coreException
      */
-    public function restore($userId = null, $template = 'default'): array {
+    public function restore($userId = null, string $template = 'default'): array {
         $module = $this->module;
         static $result = [];
 
@@ -288,7 +288,7 @@ class users_custom extends def_module {
         }
 
         if ($subject && $content)
-            $this->module->sendMail($email, $subject, $content);
+            $this->getMailType()->sendMail($email, $subject, $content);
 
         $eventPoint = new umiEventPoint('successfulPasswordRestoring');
         $eventPoint->setMode('after');
