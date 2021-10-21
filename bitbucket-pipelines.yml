@@ -113,14 +113,14 @@ definitions:
           - sentry-cli releases -o "${SENTRY_ORG}" deploys "${SENTRY_VERSION}" new -e "${SENTRY_ENV}"
 pipelines:
   branches:
-    production:
-      - step: *versioned
+    production:     
       - step: *define-variables
       - step:
           <<: *deploy-ssh
           deployment: production
       - step: *build-assets
       - step: *deploy-assets
+      - step: *versioned      
       - step: *sentry
       - step: *tagging
     dev:
