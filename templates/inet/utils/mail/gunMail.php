@@ -1,106 +1,99 @@
 <?php
-    use Inet\Proxy\Mail\iMail;
-    use UmiCms\Service;
-    use Mailgun\Mailgun;
-    use Mailgun\HttpClientConfigurator;
 
-    class gunMail implements iMail
-    {
-        /** @const bool VALIDATE_EMAIL нужно ли проверять валидность email (сервис может быть не доступен!) */
-        const VALIDATE_EMAIL = false;
+use UmiCms\Service;
+use Mailgun\Mailgun;
+use Inet\Proxy\Mail\iMail;
+use Mailgun\Hydrator\ArrayHydrator;
+use Mailgun\HttpClient\HttpClientConfigurator;
+use Mailgun\Model\Message\SendResponse;
 
-        /**
-         * Отправляет письмо через MailGun
-         *
-         * @inheritdoc
-         * @return bool|\Mailgun\Model\Message\SendResponse
-         * @throws coreException
-         */
-        public function sendMail($emails = [], $subject = '', $content = 'default', $filePath = '', $tags = []) {
-            // loading custom config file
-            $dataModule = cmsController::getInstance()->getModule('data');
-            $config = $dataModule->loadCustomConfig();
-        
-            $umiRegistry = Service::Registry();
-            $apiKey = $config->get('mailgun', 'API-Key');
-            $domain = Service::DomainDetector()->detectHost();
-            $emailFrom = "$domain <{$umiRegistry->get("//settings/email_from")}>";
-            $attachment = $filePath ? [['filePath' => $filePath]] : [];
-    
-            if (empty($emails))
-                throw new Exception('Empty Email list');
+class gunMail implements iMail
+{
+    /** @const bool VALIDATE_EMAIL нужно ли проверять валидность email (сервис может быть не доступен!) */
+    const VALIDATE_EMAIL = false;
 
-            // remove `www.` from domain to qualify it for mailGun api
-            $domain = preg_match('~www~', $domain) ? substr($domain, 4) : $domain;
+    /**
+     * Отправляет письмо через MailGun
+     *
+     * @inheritdoc
+     * @return bool|SendResponse
+     * @throws coreException
+     */
+    public function sendMail($emails = [], $subject = '', $content = 'default', $filePath = '', $tags = []) {
+        // loading custom config file
+        // TODO: replace with load from .dotenv config
+        $dataModule = cmsController::getInstance()->getModule('data');
+        $config = $dataModule->loadCustomConfig();
 
-            // set mailgun configuration
-            $configurator = new HttpClientConfigurator();
-            $configurator->setEndpoint("https://api.eu.mailgun.net/v3/$domain/messages");
-            $configurator->setApiKey($apiKey);
-            $configurator->setDebug(true);
+        $umiRegistry = Service::Registry();
+        $apiKey = $config->get('mailgun', 'API-Key');
+        $domain = Service::DomainDetector()->detectHost();
+        $emailFrom = "$domain <{$umiRegistry->get("//settings/email_from")}>";
+        $attachment = $filePath ? [['filePath' => $filePath]] : [];
 
-            $mg = Mailgun::configure($configurator);
-            $isValid = true;
-            $result = false;
+        if (empty($emails))
+            throw new Exception('Empty Email list');
 
-            $emails = is_array($emails) ? $emails : [$emails];
-            foreach ($emails as $emailTo) {
-                // email validation on Mailgun
-                if (self::VALIDATE_EMAIL) {
-                    $isValid = $this->validateEmail($mg, $emailTo);
-                }
+        // remove `www.` from domain to qualify it for mailGun api
+        $domain = preg_match('~www~', $domain) ? substr($domain, 4) : $domain;
 
-                if ($isValid) {
-                    try {
-                        $result = $mg->messages()->send($domain, [
-                            'from'    => $emailFrom,
-                            'to'      => $emailTo,
-                            'subject' => $subject,
-                            'text'    => '',
-                            'html'    => $content,
-                            'attachment' => $attachment,
-                            'o:tag'   => $tags
-                        ]);
-                    } catch (\Mailgun\Exception\HydrationException $e) {
-                        var_dump($e);
-                    }
-                }
-            }
-            
-            return $result;
-        }
+        // set mailgun configuration
+        $configurator = new HttpClientConfigurator();
+        $configurator->setEndpoint("https://api.eu.mailgun.net/");
+        $configurator->setApiKey($apiKey);
+        $configurator->setDebug(true);
 
-        /**
-         * Email validation on Mailgun
-         * @param Mailgun $mg
-         * @param string  $email
-         * @return false
-         */
-        private function validateEmail(Mailgun $mg, $email = ''): bool {
-            $valResult = false;
+        $mg = new Mailgun($configurator, new ArrayHydrator());
 
-            try {
-                $validation = $mg->emailValidation();
-                $valResult = $validation->validate($email, true);
-            } catch (\Mailgun\Exception $e) {
-                var_dump($e);
+        $isValid = true;
+        $result = false;
+
+        $emails = is_array($emails) ? $emails : [$emails];
+        foreach ($emails as $emailTo) {
+            // email validation on Mailgun
+            if (self::VALIDATE_EMAIL) {
+                $isValid = $this->validateEmail($mg, $emailTo);
             }
 
-            return $valResult;
+            if ($isValid) {
+                try {
+                    $result = $mg->messages()->send($domain, [
+                        'from'    => $emailFrom,
+                        'to'      => $emailTo,
+                        'subject' => $subject,
+                        'text'    => '',
+                        'html'    => $content,
+                        'attachment' => $attachment,
+                        'o:tag'   => $tags
+                    ]);
+                } catch (\Mailgun\Exception\HydrationException $e) {
+                    var_dump($e);
+                }
+            }
         }
 
-        /**
-         * Deprecated email validation on Mailgun
-         * @deprecated
-         * @param iConfiguration $config
-         * @param string         $email
-         * @return mixed
-         */
-        private function validateEmailViaDeprecatedAPI(iConfiguration $config, $email = '') {
-            $apiPubKey = $config->get('mailgun', 'API-Pub-Key');
-
-            $mgValClient = new Mailgun($apiPubKey);
-            $valResult = $mgValClient->get("address/validate", ['address' => $email]);
-            return $valResult->http_response_body->is_valid;
-        }
+        return $result;
     }
+
+    /**
+     * Email validation on Mailgun
+     *
+     * @depracated
+     * @param Mailgun $mg
+     * @param string $email
+     * @return false
+     * @throws Exception
+     */
+    private function validateEmail(Mailgun $mg, string $email = ''): bool {
+        $valResult = false;
+
+        try {
+            $validation = $mg->emailValidation();
+            $valResult = $validation->validate($email, true);
+        } catch (\Mailgun\Exception $e) {
+            var_dump($e);
+        }
+
+        return $valResult;
+    }
+}

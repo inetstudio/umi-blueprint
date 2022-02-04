@@ -42,6 +42,20 @@
         }
 
         /**
+         * @param string $popup
+         */
+        public function addPopup(string $popup = '') {
+            $this->_popups[] = $popup;
+        }
+
+        /**
+         * @return string
+         */
+        public function getPopups(): string {
+            return implode(PHP_EOL, $this->_popups);
+        }
+
+        /**
          * @param int $number
          * @param string $word
          * @param bool $strToUpperCase
@@ -76,52 +90,6 @@
                 elseif ($val > 1 && $val < 5) return $str2;
                 else return $str3;
             }
-        }
-
-        /**
-         * @param string $popup
-         */
-        public function addPopup(string $popup = '') {
-            $this->_popups[] = $popup;
-        }
-
-        /**
-         * @return string
-         */
-        public function getPopups(): string {
-            return implode(PHP_EOL, $this->_popups);
-        }
-
-        /**
-         * Возвращает адрес изображения элемента
-         *
-         * @param iUmiEntinty $entity (страница/объект)
-         * @param string      $field название поля
-         * @param bool        $webMode
-         * @return string
-         */
-        public function getImagePath(iUmiEntinty $entity, string $field = 'photo', bool $webMode = false): string {
-            /** @var iUmiImageFile $image */
-            $image = $entity->getValue($field);
-
-            if ($image instanceof iUmiImageFile) {
-                return $image->getFilePath($webMode);
-            }
-
-            return $this->getNoImageHolderPath();
-        }
-
-        /**
-         * Возвращает имя объекта по его id
-         *
-         * @param int|null $id
-         * @return string
-         */
-        public function getObjectNameById(int $id = null) {
-            if (!$id) return false;
-
-            $object = $this->getObjectById($id);
-            return $object instanceof iUmiObject ? $object->getName() : '';
         }
 
         /**
@@ -178,7 +146,6 @@
             return '';
         }
 
-
         /**
          * Возвращает текущую строку запроса без get-параметров
          * или только с первым
@@ -193,7 +160,6 @@
             return strtok($currentUrl, $token);
         }
 
-
         /**
          * Возвращает путь до именного шаблона.
          * Возможна перегрузка шаблона для конкретного бренда.
@@ -205,20 +171,23 @@
         public function getNamedTemplate(array $variables, string $basePath = 'modules/content/content'): string {
             $page = $variables['page'];
             $parent = $this->getImmediateParent($variables);
-            if ($parent instanceof umiHierarchyElement) {
-                $root = $parent->getAltName();
-            } else {
-                $root = '';
-            }
+            $folder = $parent ? $parent->getAltName() : "";
 
-            // получаем директорию шаблонов
+            // template route inside `php` directory
+            $templatePath = [
+                'module'   => $basePath,
+                'root'     => $folder,
+                'template' => $page->getAltName()
+            ];
+
+            // templates directory
             $templatesDirectory = $this->getTemplateEngine()->getTemplatesDirectory();
-            // перегружаемый шаблон
-            $template = $templatesDirectory . $basePath . '/' . $root . '/' . $page->getAltName() . '.phtml';
-            // проверяем доступность перегрузки
-            $root = $root && is_readable($template) ? $root : 'global';
+            // override template file
+            $template = $templatesDirectory . implode('/', array_values($templatePath)) . ".phtml'";
+            // check if override is accessible
+            $templatePath['root'] = $folder && is_readable($template) ? $folder : 'global';
 
-            return $basePath . '/' . $root . '/' . $page->getAltName();
+            return implode('/', array_values($templatePath));
         }
 
         /**
@@ -244,7 +213,7 @@
         }
 
         /**
-         * Проверяем, является ли тип данных, переданной страницы, - "специальным" типом данных,
+         * Проверяем, является ли тип данных, переданной страницы, — "специальным" типом данных,
          * который требует персонального шаблона для вывода этих данных.
          *
          * @param iUmiHierarchyElement $page
@@ -334,15 +303,6 @@
         public function getCabinetLink(string $prefix = ''): string {
             return $this->getTemplateEngine()->getCommonVar('pre_lang') . '/cabinet/';
         }
-    
-        /**
-         * Возвращает ссылку на общую форму отзыва
-         * @param string $prefix
-         * @return string
-         */
-        public function getCommonFeedbackLink(string $prefix = ''): string {
-            return $this->getTemplateEngine()->getCommonVar('pre_lang') . '/feedback/';
-        }
 
         /**
          * Возвращает ссылку для голосования за страницу
@@ -351,7 +311,7 @@
          * @return string
          */
         public function getVotePageLink(int $pageId): string {
-            return $this->getTemplateEngine()->getCommonVar('pre_lang') . '/udata//vote/setElementRating//' . $pageId;
+            return $this->getTemplateEngine()->getCommonVar('pre_lang') . "/udata//vote/setElementRating//$pageId";
         }
 
 

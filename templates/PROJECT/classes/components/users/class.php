@@ -2,7 +2,7 @@
 use UmiCms\Service;
 use UmiCms\System\Auth\PasswordHash\WrongAlgorithmException;
 
-class users_custom extends def_module {
+class UsersCustom extends def_module {
     use tMail;
 
     /**
@@ -19,7 +19,7 @@ class users_custom extends def_module {
      * @throws coreException
      * @throws publicAdminException Если авторизация не удалась через административную панель
      */
-    public function login_do_json(): array {
+    public function loginDoJson(): array {
         $login = htmlspecialchars(trim(getRequest('login')));
         $password = htmlspecialchars(trim(getRequest('password')));
 
@@ -35,48 +35,6 @@ class users_custom extends def_module {
 
         return $this->handleLoginFailure($login, $password);
     }
-    
-    /**
-     * Обрабатывает результат успешной авторизации
-     * в зависимости от режима работы системы.
-     *
-     * @param iUmiObject $user пользователь
-     * @return mixed
-     * @throws coreException
-     * @throws Exception
-     */
-    private function handleLoginSuccess(iUmiObject $user): array {
-        $result = [
-            'success' => true,
-        ];
-        
-        if (Service::Session()->get('fake-user')) {
-            $this->module->restoreUser(true);
-            return $result;
-        }
-        
-        Service::Auth()->loginUsingId($user->getId());
-        $this->module->triggerLoginSuccessEvent($user);
-        
-        return $result;
-    }
-
-    /**
-     * Обрабатывает результат неудачной авторизации
-     * в зависимости от режима работы системы.
-     * @param string $login Введенный логин
-     * @param string $password введенный пароль
-     * @return mixed
-     * @throws publicAdminException
-     * @throws Exception
-     */
-    private function handleLoginFailure(string $login, string $password): array {
-        $this->module->triggerLoginFailureEvent($login, $password);
-        if (Service::Request()->isAdmin()) {
-            throw new publicAdminException(getLabel('label-text-error'));
-        }
-        return ['success' => false, 'error' => getLabel('login_do_try_again')];
-    }
 
     /**
      * Отправляет письмо с кодом активации для восстановления пароля
@@ -86,10 +44,10 @@ class users_custom extends def_module {
      * @throws coreException
      * @throws selectorException
      */
-    public function forget_do(string $template = 'default'): array {
-        $module = $this->module;
+    public function forgetDo(string $template = 'default'): array {
         static $macrosResult;
-        $result = ['success' => true, 'message' => getLabel('error-new-password-sent-if-user-exist')];
+
+        $module = $this->module;
 
         if ($macrosResult) {
             return $macrosResult;
@@ -110,8 +68,10 @@ class users_custom extends def_module {
             }
         }
 
-        if (!$userId)
+        $result = ['success' => true, 'message' => getLabel('error-new-password-sent-if-user-exist')];
+        if (!$userId) {
             return $result;
+        }
         
         $restoreCode = md5($module->getRandomPassword());
         $user = umiObjectsCollection::getInstance()->getObject($userId);
@@ -125,12 +85,12 @@ class users_custom extends def_module {
             $email = $user->getValue('email');
             $domain = Service::DomainDetector()->detect();
             $restoreLink = $domain->getCurrentUrl() . "/?restore_code=" . $restoreCode;
-            
+
             $variables = [
-                'domain' => $domain->getCurrentHostName(),
+                'domain'       => $domain->getCurrentHostName(),
                 'restore_link' => $restoreLink,
-                'login' => $user->getValue('login'),
-                'email' => $email,
+                'login'        => $user->getValue('login'),
+                'email'        => $email,
             ];
             $objectList = [$user];
 
@@ -141,6 +101,7 @@ class users_custom extends def_module {
             $subject = null;
             $content = null;
 
+            // TODO: extract emails logic to events handlers
             if ($this->module->isUsingUmiNotifications()) {
                 $mailNotifications = Service::MailNotifications();
                 $notification = $mailNotifications->getCurrentByName('notification-users-restore-password');
@@ -320,4 +281,47 @@ class users_custom extends def_module {
         
         return $result;
     }
+
+    /**
+     * Обрабатывает результат успешной авторизации
+     * в зависимости от режима работы системы.
+     *
+     * @param iUmiObject $user пользователь
+     * @return mixed
+     * @throws coreException
+     * @throws Exception
+     */
+    private function handleLoginSuccess(iUmiObject $user): array {
+        $result = [
+            'success' => true,
+        ];
+
+        if (Service::Session()->get('fake-user')) {
+            $this->module->restoreUser(true);
+            return $result;
+        }
+
+        Service::Auth()->loginUsingId($user->getId());
+        $this->module->triggerLoginSuccessEvent($user);
+
+        return $result;
+    }
+
+    /**
+     * Обрабатывает результат неудачной авторизации
+     * в зависимости от режима работы системы.
+     * @param string $login Введенный логин
+     * @param string $password введенный пароль
+     * @return mixed
+     * @throws publicAdminException
+     * @throws Exception
+     */
+    private function handleLoginFailure(string $login, string $password): array {
+        $this->module->triggerLoginFailureEvent($login, $password);
+        if (Service::Request()->isAdmin()) {
+            throw new publicAdminException(getLabel('label-text-error'));
+        }
+        return ['success' => false, 'error' => getLabel('login_do_try_again')];
+    }
+
 }

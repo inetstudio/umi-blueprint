@@ -2,11 +2,31 @@
 use UmiCms\Classes\Components\Data\FormSaver;
 use UmiCms\Service;
 
-class data_custom extends def_module {
+class DataCustom extends def_module {
     /**
      * @var data|DataCustomMacros $module
      */
     public $module;
+
+    /**
+     * @var array|string[]
+     */
+    private static array $extensions = [
+        'DataCustomHandlers' => '/handlers.php',
+        'DataGuideHelpers'   => '/extensions/guide-helpers.php',
+    ];
+
+    /**
+     * @noinspection PhpMissingParentConstructorInspection
+     * DataCustom constructor.
+     * @param data $self
+     */
+    public function __construct(data $self) {
+        foreach (self::$extensions as $class => $path) {
+            $self->__loadLib($path, (dirname(__FILE__)));
+            $self->__implement($class);
+        }
+    }
 
     /**
      * @return array
@@ -127,8 +147,7 @@ class data_custom extends def_module {
             switch ($fileError) {
                 case 1:
                 case 2:
-                    /** @noinspection PhpPossiblePolymorphicInvocationInspection */
-                $allowedSize = cmsController::getInstance()->getModule('data')->getAllowedMaxFileSize();
+                    $allowedSize = cmsController::getInstance()->getModule('data')->getAllowedMaxFileSize();
                     $formattedError = sprintf(getLabel($phpErrors[$fileError], 'content/ext'), $allowedSize);
                 break;
                 default:
@@ -181,30 +200,6 @@ class data_custom extends def_module {
     }
 
     //endregion
-
-    //region Event listeners
-
-    /**
-     * If we get user value from an ordinary auth
-     * we will get an umiObject instance reference,
-     * but if we get it under root (admin) auth - it will return a numeric,
-     * therefore we need to check what type has the value
-     *
-     * @param iUmiObject $object
-     * @param string     $property
-     * @return bool|umiObject
-     */
-    protected static function checkTypeOfValue(iUmiObject $object, string $property = '') {
-        $user = $object->getValue($property);
-        if (is_numeric($user)) {
-            $objects = umiObjectsCollection::getInstance();
-            $user = $objects->getObject($user);
-        }
-
-        return $user;
-    }
-
-    //endregion Event listeners
 
     /**
      * @param umiFile $file
