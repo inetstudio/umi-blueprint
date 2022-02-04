@@ -61,11 +61,12 @@ definitions:
         deployment: test
         script:
           - *env_anchor
+          - export PIPE_AGENT=/opt/atlassian/pipelines/agent
           - apt-get update && apt-get -qq install git-ftp
-          - ssh-keygen -y -f /opt/atlassian/pipelines/agent/ssh/id_rsa > id_rsa.pub
-          - git ftp ${DEP_MODE} --user $USER --key /opt/atlassian/pipelines/agent/ssh/id_rsa --pubkey /opt/atlassian/pipelines/agent/build/id_rsa.pub sftp://$HOST$SSH_PATH
+          - ssh-keygen -y -f ${PIPE_AGENT}/ssh/id_rsa > id_rsa.pub
+          - git ftp ${DEP_MODE} --user $USER --key ${PIPE_AGENT}/ssh/id_rsa --pubkey ${PIPE_AGENT}/build/id_rsa.pub sftp://$HOST$SSH_PATH
           - apt-get install libev-dev -y
-          - pipe: atlassian/ssh-run:0.3.1
+          - pipe: atlassian/ssh-run:0.4.0
             variables:
               SSH_USER: $USER
               SERVER: $HOST
@@ -77,7 +78,7 @@ definitions:
         name: Deploy to server via SCP using SSH credentials
         script:
           - *env_anchor
-          - pipe: atlassian/scp-deploy:0.3.12
+          - pipe: atlassian/scp-deploy:1.2.1
             variables:
               USER: $USER
               SERVER: $HOST
