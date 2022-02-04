@@ -9,25 +9,25 @@
  */
 class ObjectTypeInstallerGroup {
     /** @var string $name */
-    protected $name = '';
+    protected string $name = '';
 
     /** @var string $title */
-    protected $title = '';
-
-    /** @var bool $active */
-    protected $active = true;
-
-    /** @var bool $visible */
-    protected $visible = true;
+    protected string $title = '';
 
     /** @var string $tip */
-    protected $tip = '';
+    protected string $tip = '';
+
+    /** @var bool $active */
+    protected bool $active = true;
+
+    /** @var bool $visible */
+    protected bool $visible = true;
 
     /** @var array $fields */
-    protected $fields = [];
+    protected array $fields = [];
 
     /** @var bool $fieldInheritName */
-    protected $fieldInheritName = true;
+    protected bool $fieldInheritName = true;
 
     /**
      * ObjectTypeInstallerGroup constructor.

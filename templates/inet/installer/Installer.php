@@ -42,12 +42,12 @@ class ObjectTypeInstaller {
     }
 
     /**
-     * @param        $name
+     * @param string $name
      * @param string $method
      * @return bool|umiObjectType
      * @throws coreException
      */
-    protected function getObjectTypeByHierarchyTypeName($name, $method = '') {
+    protected function getObjectTypeByHierarchyTypeName(string $name, string $method = '') {
         $typeId = $this->objectTypesCollection->getTypeIdByHierarchyTypeName($name, $method);
 
         if (!$typeId) {
@@ -60,10 +60,10 @@ class ObjectTypeInstaller {
     }
 
     /**
-     * @param $guid
-     * @return bool|iUmiObjectType|mixed|umiObjectType|null
+     * @param string $guid
+     * @return bool|iUmiObjectType|umiObjectType|null
      */
-    protected function getObjectTypeByGUID($guid) {
+    protected function getObjectTypeByGUID(string $guid) {
         $type = $this->objectTypesCollection->getTypeByGUID($guid);
 
         return $type instanceof umiObjectType ? $type : false;
@@ -72,12 +72,12 @@ class ObjectTypeInstaller {
     /**
      * @param ObjectTypeInstallerObjectType $objectType
      * @param bool                          $bUpdate
-     * @return bool|iUmiObjectType|mixed|umiObjectType|null
+     * @return bool|iUmiObjectType|umiObjectType|null
      * @throws coreException
      * @throws databaseException
      * @throws publicException
      */
-    protected function createObjectType(ObjectTypeInstallerObjectType $objectType, $bUpdate = true) {
+    protected function createObjectType(ObjectTypeInstallerObjectType $objectType, bool $bUpdate = true) {
         $guid = $objectType->getGuid();
 
         if (!$guid) {
@@ -117,15 +117,15 @@ class ObjectTypeInstaller {
     }
 
     /**
-     * @param                    $arGroups
-     * @param umiObjectType      $type
+     * @param array $arGroups
+     * @param umiObjectType $type
      * @param umiObjectType|null $baseType
      * @throws coreException
      * @throws databaseException
      * @throws publicException
      * @throws wrongParamException
      */
-    protected function createObjectTypeGroups($arGroups, umiObjectType $type, umiObjectType $baseType = null) {
+    protected function createObjectTypeGroups(array $arGroups, umiObjectType $type, umiObjectType $baseType = null) {
         foreach ($arGroups as $arGroup) {
             $this->createObjectTypeGroup($arGroup, $type, $baseType);
         }
@@ -171,13 +171,13 @@ class ObjectTypeInstaller {
             $groupId = $type->addFieldsGroup($name, $title, $active, $visible, $tip);
 
             if (!$groupId) {
-                throw new publicException('Не удалось создать группу полей ' . $title . ' (' . $name . ') в типе данных ' . $type->getId());
+                throw new publicException("Не удалось создать группу полей $title ($name) в типе данных " . $type->getId());
             }
 
             $group = $type->getFieldsGroup($groupId);
 
             if (!$group instanceof umiFieldsGroup) {
-                throw new publicException('Не удалось создать группу полей ' . $title . ' (' . $name . ') в типе данных ' . $type->getId());
+                throw new publicException("Не удалось создать группу полей $title ($name) в типе данных " . $type->getId());
             }
         }
 
@@ -331,7 +331,7 @@ class ObjectTypeInstaller {
      * @throws databaseException
      * @throws publicException
      */
-    protected function getFieldTypeId($type, $isMultiple = false) {
+    protected function getFieldTypeId($type, bool $isMultiple = false) {
         static $types = array();
 
         $hash = $type;
@@ -360,7 +360,7 @@ class ObjectTypeInstaller {
      * @throws coreException
      * @throws selectorException
      */
-    protected function createGuideValues($typeId, $values = []): bool {
+    protected function createGuideValues($typeId, array $values = []): bool {
         if (!$values) {
             return false;
         }
@@ -372,7 +372,6 @@ class ObjectTypeInstaller {
         }
 
         $arValues = [];
-
         foreach ($values as $value) {
             $guid = getArrayKey($value, self::guide_value_guid);
 
@@ -404,11 +403,7 @@ class ObjectTypeInstaller {
         }
 
         foreach ($arValues as $guid => $name) {
-            if (isset($guideValues[$guid])) {
-                $objectId = $guideValues[$guid];
-            } else {
-                $objectId = $this->objectsCollection->addObject($name, $typeId);
-            }
+            $objectId = $guideValues[$guid] ?? $this->objectsCollection->addObject($name, $typeId);
 
             $object = $this->objectsCollection->getObject($objectId);
 

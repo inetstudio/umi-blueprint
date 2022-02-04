@@ -7,12 +7,12 @@ require_once dirname(__FILE__) . '/Installer.php';
  * @copyright Copyright (c) 2021, Max Rakhmankin
  */
 class ExtendedInstaller extends ObjectTypeInstaller {
-    /** @var int $rootGuidesTypeId id типа корневого справочника */
-    protected $rootGuidesTypeId = false;
-    /** @var int $rootPagesTypeId id типа корневого раздела */
-    protected $rootPagesTypeId = false;
-    /** @var array $extensions массив названий для классов расширений */
-    protected $extensions = [];
+    /** @var int $rootGuidesTypeId Id типа корневого справочника */
+    protected int $rootGuidesTypeId = 0;
+    /** @var int $rootPagesTypeId Id типа корневого раздела */
+    protected int $rootPagesTypeId = 0;
+    /** @var array $extensions Массив названий для классов расширений */
+    protected array $extensions = [];
 
     /**
      * ExtendedInstaller constructor.
@@ -46,12 +46,24 @@ class ExtendedInstaller extends ObjectTypeInstaller {
 
         $directory = new umiDirectory($extensionsFolder);
         foreach ($directory->getFiles('(.*).php') as $filePath) {
-            /** @noinspection PhpIncludeInspection */
             require_once $filePath;
         }
     }
 
     //region Type creating helpers
+
+    /**
+     * @param $arGroups
+     * @param umiObjectType $type
+     * @param $guideTypeGUID
+     * @param $guideTypeId
+     * @return void
+     * @throws coreException
+     * @throws databaseException
+     * @throws publicException
+     * @throws selectorException
+     * @throws wrongParamException
+     */
     protected function createTypeFields($arGroups, umiObjectType $type, $guideTypeGUID = null, $guideTypeId = null) {
         $groups = [];
 
@@ -114,7 +126,7 @@ class ExtendedInstaller extends ObjectTypeInstaller {
      * @param array $fields
      * @return array
      */
-    protected function createGroupArray($name, $title, $fields = []): array {
+    protected function createGroupArray($name, $title, array $fields = []): array {
         return [
             'name'   => $name,
             'title'  => $title,
@@ -129,7 +141,7 @@ class ExtendedInstaller extends ObjectTypeInstaller {
      * @param string $tip
      * @return array
      */
-    protected function createFieldArray($name, $title, $typeId, $tip = ''): array {
+    protected function createFieldArray($name, $title, $typeId, string $tip = ''): array {
         return [
             'name'    => $name,
             'title'   => $title,
@@ -168,7 +180,7 @@ class ExtendedInstaller extends ObjectTypeInstaller {
      * @throws databaseException
      * @throws publicException
      */
-    protected function generateGroupsFieldsArray($structure = []): array {
+    protected function generateGroupsFieldsArray(array $structure = []): array {
         $arGroups = [];
         foreach ($structure as $dataGroup) {
             $fields = [];
@@ -208,8 +220,11 @@ class ExtendedInstaller extends ObjectTypeInstaller {
      * @param iOutputBuffer $buffer
      * @param null $guideTypeGUID
      * @param null $guideTypeId
+     * @throws coreException
      * @throws databaseException
      * @throws publicException
+     * @throws selectorException
+     * @throws wrongParamException
      */
     protected function handleTypeStructureChanges(
         array $dataStructure,
@@ -225,16 +240,12 @@ class ExtendedInstaller extends ObjectTypeInstaller {
         $arGroups = $this->generateGroupsFieldsArray($dataStructure);
 
         $this->createTypeFields($arGroups, $type, $guideTypeGUID, $guideTypeId);
-
-        if ($buffer) $buffer->push($caller . ": " . true . PHP_EOL);
+        $buffer->push($caller . ": " . true . PHP_EOL);
     }
 
     /**
      * @param array $arField
      * @param umiObjectType|null $guide
-     * @return null
      */
-    protected function performGuideManipulations(array $arField, ?umiObjectType $guide) {
-        return null;
-    }
+    protected function performGuideManipulations(array $arField, ?umiObjectType $guide) {}
 }

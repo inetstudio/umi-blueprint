@@ -11,43 +11,43 @@ class ObjectTypeInstallerField {
     /**
      * @var string
      */
-    protected $name = '';
+    protected string $name = '';
     /**
      * @var string
      */
-    protected $title = '';
-    /**
-     * @var int
-     */
-    protected $typeId = 0;
-    /**
-     * @var bool
-     */
-    protected $visible = true;
-    /**
-     * @var bool
-     */
-    protected $locked = false;
-    /**
-     * @var bool
-     */
-    protected $required = false;
+    protected string $title = '';
     /**
      * @var string
      */
-    protected $tip = '';
-    /**
-     * @var bool
-     */
-    protected $inFilter = false;
-    /**
-     * @var bool
-     */
-    protected $inSearch = false;
+    protected string $tip = '';
     /**
      * @var int
      */
-    protected $guideId = 0;
+    protected int $typeId = 0;
+    /**
+     * @var int
+     */
+    protected int $guideId = 0;
+    /**
+     * @var bool
+     */
+    protected bool $visible = true;
+    /**
+     * @var bool
+     */
+    protected bool $locked = false;
+    /**
+     * @var bool
+     */
+    protected bool $required = false;
+    /**
+     * @var bool
+     */
+    protected bool $inFilter = false;
+    /**
+     * @var bool
+     */
+    protected bool $inSearch = false;
 
     /**
      * @param $name

@@ -1,5 +1,4 @@
 <?php
-    use \UmiCms\Classes\System\Utils\Captcha\Strategies\GoogleRecaptcha;
     use UmiCms\Service;
 
     /**
@@ -25,7 +24,6 @@
             $templateEngine->setCommonVar('pre_lang', $variables['pre-lang']);
             $templateEngine->setCommonVar('header', $variables['header'] ?? '');
             $templateEngine->setCommonVar('request_uri', $variables['request-uri']);
-            $templateEngine->setCommonVar('user', $variables['user']);
             $templateEngine->setCommonVar('seo', new SeoPhpExtension($templateEngine));
         }
 
@@ -45,29 +43,35 @@
 
         /**
          * @param int $number
+         * @param string $word
          * @param bool $strToUpperCase
          * @return mixed
          */
-        public function getPointsWord(int $number, bool $strToUpperCase = false) {
-            $number = (!$number) ? 0 : $number;
-            $word = $this->get_correct_str($number, 'балл', 'балла', 'баллов');
+        public function getWordsEnd(int $number, string $word = '', bool $strToUpperCase = false) {
+            $number = $number ?: 0;
+            $words = [
+                $word,
+                $word . 'a',
+                $word . 'ов',
+            ];
 
-            return $strToUpperCase ? mb_strtoupper($word, 'UTF-8') : $word;
+            $words = $strToUpperCase ? array_map('mb_strtoupper', $words) : $words;
+            return $this->getCorrectString($number, $words[0], $words[1], $words[2]);
         }
 
         /**
-         * @param $num
+         * @param $number
          * @param $str1
          * @param $str2
          * @param $str3
          * @return mixed
          */
-        private function get_correct_str($num, $str1, $str2, $str3) {
-            $val = $num % 100;
+        private function getCorrectString($number, $str1, $str2, $str3) {
+            $val = $number % 100;
 
             if ($val > 10 && $val < 20) return $str3;
             else {
-                $val = $num % 10;
+                $val = $number % 10;
                 if ($val == 1) return $str1;
                 elseif ($val > 1 && $val < 5) return $str2;
                 else return $str3;
@@ -266,38 +270,6 @@
         }
 
         /**
-         * @return array
-         * @throws coreException
-         * @throws selectorException
-         */
-        public function getCitiesList(): array {
-            $cities = new selector('objects');
-            $cities->types('object-type')->guid(\UmiCms\Classes\System\Entities\City\City::CITY_TYPE_GUID);
-            $cities->option('no-length', true);
-
-            $items = $this->createItemsArray($cities);
-
-            return ["items" => $items];
-        }
-
-        /**
-         * @return array[]
-         * @throws coreException
-         * @throws selectorException
-         */
-        public function getCountriesList(): array {
-            $countries = new selector('objects');
-            $countries->types('object-type')->guid(\UmiCms\Classes\System\Entities\Country\Country::COUNTRY_TYPE_GUID);
-            $countries->option('no-length', true);
-            $countries->limit(0, 10);
-
-            $options = ['file' => 'download_info', 'translation' => 'translation'];
-            $items = $this->createItemsArray($countries, $options);
-
-            return ["items" => $items];
-        }
-
-        /**
          * @return bool
          */
         public function isUserAuthorized(): bool {
@@ -395,30 +367,5 @@
             $settingsContainerId = $settings->getIdByCustomId(self::SITE_SETTINGS_ALIAS);
 
             return umiObjectsCollection::getInstance()->getObject($settingsContainerId);
-        }
-
-        /**
-         * @param selector $selector
-         * @param array    $options
-         * @return array
-         * @throws coreException
-         */
-        private function createItemsArray(selector $selector, array $options = []): array {
-            $items = [];
-            /** @var umiObject $item */
-            foreach ($selector->result() as $item) {
-                $merge = [];
-                if (!empty($options)) {
-                    array_walk($options, function ($o, $k) use ($item, &$merge) {
-                        $merge[$k] = $item->getValue($o);
-                    });
-                }
-                $items[] = array_merge([
-                    'id'   => $item->getId(),
-                    'name' => $item->getName(),
-                ], $merge);
-            }
-
-            return $items;
         }
     }

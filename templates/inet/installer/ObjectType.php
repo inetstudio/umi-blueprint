@@ -11,35 +11,35 @@ class ObjectTypeInstallerObjectType {
     /**
      * @var string
      */
-    protected $name = '';
+    protected string $name = '';
     /**
      * @var string
      */
-    protected $guid = '';
+    protected string $guid = '';
     /**
      * @var int
      */
-    protected $parentId = 0;
+    protected int $parentId = 0;
     /**
      * @var bool
      */
-    protected $hasGuide = false;
+    protected bool $hasGuide = false;
     /**
      * @var bool
      */
-    protected $isPublic = false;
+    protected bool $isPublic = false;
 
 
     /**
      * ObjectTypeInstallerObjectType constructor.
      *
-     * @param        $name
+     * @param string $name
      * @param string $guid
-     * @param int    $parentId
-     * @param bool   $hasGuide
-     * @param bool   $isPublic
+     * @param int $parentId
+     * @param bool $hasGuide
+     * @param bool $isPublic
      */
-    function __construct($name, $guid = '', $parentId = 0, $hasGuide = false, $isPublic = false) {
+    function __construct(string $name, string $guid = '', int $parentId = 0, bool $hasGuide = false, bool $isPublic = false) {
         $this->name = $name;
         $this->guid = $guid;
         $this->parentId = $parentId;
