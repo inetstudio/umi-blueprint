@@ -1,31 +1,25 @@
 <?php
 abstract class baseTables {
-    /** @var array $tableColumns Поля текущей таблицы */
-    protected array $tableColumns;
-
     /* @var string Префикс имени таблицы для хранения данных */
     protected string $tableNamePrefix = 'cms3_base_table';
 
-    /** @var bool Использовать разделитель в названии таблиц (добавляет год и квартал в название) */
-    protected bool $useDivider = true;
-
-    /* @var int Относительная частота разделения таблицы за год (кратна 3-м, чем выше - тем реже)  */
-    protected int $tableDivideFrequency = 3;
+    /** @var array $tableColumns Поля текущей таблицы */
+    protected array $tableColumns = [];
 
     /** @var selectorWhereSysProp[] Свойства, по которым идет выборка */
     protected array $whereProps = [];
 
     /** @var int Ограничение на количество записей */
-    protected int $limit;
+    protected int $limit = 10;
 
     /** @var int Отступ в выборке записей */
-    protected int $offset;
+    protected int $offset = 0;
+
+    /** @var int Счётчик количества найденных записей */
+    protected int $totalRows = 0;
 
     /** @var string $tableName Имя таблицы в бд, которая будет хранить данные */
     private string $tableName;
-
-    /** @var string $frequencyPostfix Постфикс имени таблицы, содержащий период её создания */
-    private string $frequencyPostfix;
 
     /* @const драйвер MySQL */
     const MYSQL_TABLE_ENGINE = 'InnoDB';
@@ -51,13 +45,10 @@ abstract class baseTables {
     /**
      * Вычисляет имя таблицы, на основании переданной временной отметки
      * и разделителя, для сегментирования таблиц по-квартально
-     * @param int|null $divider
-     * @param null     $timePoint
+     *
      * @throws publicException
      */
-    public function computeTableName(int $divider = null, $timePoint = null) {
-        // set divide frequency for year
-        $this->setFrequencyPostfix($divider, $timePoint);
+    public function computeTableName() {
         // set table name based on previous fields
         $this->setTableName();
     }
@@ -136,11 +127,14 @@ abstract class baseTables {
         $limit = $this->buildLimit();
 
         $sql = <<<SQL
-SELECT * FROM `$tableName` WHERE $conditions $limit
+SELECT SQL_CALC_FOUND_ROWS * FROM `$tableName` WHERE $conditions $limit
 SQL;
         $result = self::tryQueryResult($sql);
+        $records = $this->transformRecordsData($result);
 
-        return $this->transformRecordsData($result);
+        $this->calculateTotalRows();
+
+        return $records;
     }
 
     /**
@@ -159,8 +153,16 @@ SQL;
     }
 
     /**
+     * @return int
+     */
+    public function getTotalRows(): int {
+        return $this->totalRows;
+    }
+
+    /**
      * Удаляет таблицу.
-     * @throws databaseException
+     *
+     * @throws databaseException|publicException
      */
     protected function dropTable() {
         $tableName = $this->getTableName();
@@ -171,16 +173,17 @@ SQL;
     }
 
     /**
-     * Проверяет существует ли таблица для хранения значений полей
+     * Проверяет, существует ли таблица для хранения значений полей
+     *
      * @param string|null $tableName
      * @return bool
-     * @throws databaseException
+     * @throws databaseException|publicException
      */
     protected function checkIfTableExists(string $tableName = null): bool {
         $secondaryTableName = $tableName ?: $this->getTableName();
 
         $sql = <<<SQL
-SHOW TABLES LIKE '{$secondaryTableName}'
+SHOW TABLES LIKE '$secondaryTableName'
 SQL;
         $result = self::tryQueryResult($sql);
 
@@ -232,13 +235,13 @@ SQL;
                 if (is_array($value) || is_object($value)) {
                     $value = $this->prepareValue($value);
                     if (umiCount($value)) {
-                        return ' NOT IN(' . implode(', ', $value) . ')' . ($column ? " OR {$column} IS NULL" : '');
+                        return ' NOT IN(' . implode(', ', $value) . ')' . ($column ? " OR $column IS NULL" : '');
                     }
 
                     return ' = 0 = 1';  // Impossible value to reset query result to zero
                 }
 
-                return ' != ' . $this->prepareValue($value) . ($column ? " OR {$column} IS NULL" : '');
+                return ' != ' . $this->prepareValue($value) . ($column ? " OR $column IS NULL" : '');
 
             case 'like':
                 if (is_array($value)) {
@@ -348,16 +351,12 @@ SQL;
 
     /**
      * Возвращает команду на создание колонки для обычного поля таблицы
-     * @param string $columnName имя обычного поля таблицы
-     * @param string $columnType тип данных для создания поля внутри таблицы
+     * @param string $columnName Имя обычного поля таблицы
+     * @param string $columnType Тип данных для создания поля внутри таблицы
      * @return string|null
-     * @throws publicException поле с именем $columnName неподдерживаемого типа данных
+     * @throws publicException Поле с именем $columnName неподдерживаемого типа данных
      */
     private function getCustomColumnDefinition(string $columnName, string $columnType): ?string {
-        if (!is_string($columnName)) {
-            throw new publicException(__METHOD__ . ": correct column name expected, $columnName given");
-        }
-
         switch ($columnType) {
             case 'obj_id':
             case 'type_id':
@@ -389,40 +388,13 @@ SQL;
             }
         }
     }
-    
-    /**
-     * Получает все существующие таблицы, данного типа
-     * (по кварталам)
-     *
-     * @return array
-     */
-    private function getAllExistingTables(): array {
-        $quarter = $this->getDividerPostfix();
-        $year = date('y');
-        $nameTables = [];
-        
-        do {
-            if (!$quarter) {
-                $quarter = 4;
-                $year--;
-            }
-            
-            $tableName = $this->tableNamePrefix . $quarter . '_' . $year;
-            $quarter--;
-            if (!$this->checkIfTableExists($tableName)) continue;
-            
-            $nameTables[] = $tableName;
-        } while ($year >= 20);
-        
-        return $nameTables;
-    }
 
     /**
      * Обновляет или создает запись для сущности
-     * @param int   $entityId идентификатор сущности
-     * @param array $data данные, которые требуется сохранить
+     * @param int   $entityId Идентификатор сущности
+     * @param array $data Данные, которые требуется сохранить
      * @return void
-     * @throws publicException если запрос к бд завершился ошибкой
+     * @throws publicException Если запрос к бд завершился ошибкой
      * @throws Exception
      */
     private function saveRecordData(int $entityId, array $data): void {
@@ -444,6 +416,7 @@ SQL;
     /**
      * @param array $data
      * @return array
+     * @throws publicException
      */
     private function prepareDataTypeForSQL(array $data): array {
         $columns = $this->getTableColumns();
@@ -470,44 +443,6 @@ SQL;
 
         return $recordsData;
     }
-    
-    /**
-     * Возвращает данные по полям из таблицы
-     *
-     * @param string $table
-     * @param string $condition
-     * @param array  $fields
-     * @param string $orderLimit
-     * @return array
-     */
-    public function getDataFromTables(string $table, string $condition, array $fields = ['id_inner'], string $orderLimit = ''): array {
-        $connectionPool = ConnectionPool::getInstance();
-        $connection = $connectionPool->getConnection();
-        $data = [];
-        
-        $tablesNames = $this->getAllNamesTables($table);
-        if (empty($tablesNames))
-            return $data;
-        
-        $fields = implode(', ', $fields);
-        $fields = $connection->escape($fields);
-        $orderLimit = $connection->escape($orderLimit);
-
-        $sql = [];
-        foreach ($tablesNames as $tableName)
-            $sql[] = "SELECT $fields FROM `$tableName` WHERE $condition";
-        $sql = implode (' UNION ', $sql) . ' ' . $orderLimit;
-
-        $result = $connection->queryResult($sql);
-        
-        if (!$result->length())
-            return $data;
-        
-        while ($row = $result->fetch())
-            $data[] = $row;
-        
-        return $data;
-    }
 
     /**
      * Возвращает дату в формате MySql
@@ -520,26 +455,6 @@ SQL;
     }
 
     /**
-     * Устанавливает постфикс имени текущей таблицы, содержащий период её создания
-     * @param int|null $divider
-     * @param null     $timePoint Точка отсчёта во времени для определения привязки к таблице
-     */
-    protected function setFrequencyPostfix(int $divider = null, $timePoint = null) {
-        $thisQuarter = $this->getDividerPostfix($divider, $timePoint);
-        $thisYear = date('y', $timePoint ?: time());
-
-        $this->frequencyPostfix = $this->useDivider ? $thisQuarter . '_' . $thisYear : '';
-    }
-
-    /**
-     * Возвращает текущую частоту разбиения за год
-     * @return string
-     */
-    private function getFrequencyPostfix(): string {
-        return $this->frequencyPostfix;
-    }
-
-    /**
      * Устанавливает имена таблиц
      * @param string $postfix Постфикс имени таблицы
      * @throws publicException Если $postfix не является строкой
@@ -549,8 +464,7 @@ SQL;
             throw new publicException(__METHOD__ . ': table name postfix should be a string');
         }
 
-        $this->tableName =
-            $this->tableNamePrefix . '_' . $this->getFrequencyPostfix() . $postfix;
+        $this->tableName = $this->tableNamePrefix . '_' . $postfix;
     }
 
     /**
@@ -566,7 +480,7 @@ SQL;
             }
             return $value;
         }
-        
+
         if (is_string($value)) {
             $connection = ConnectionPool::getInstance()->getConnection();
             return "'" . $connection->escape($value) . "'";
@@ -584,7 +498,7 @@ SQL;
             throw new publicException(__METHOD__ . ': table columns `$tableColumns` should be overridden from inherited class');
         }
 
-        return $this->tableColumns ?? [];
+        return $this->tableColumns;
     }
 
     /**
@@ -615,7 +529,7 @@ SQL;
 
     /**
      * Формирует часть SQL запроса с фильтром по значению поля
-     * @param selectorWhereSysProp $prop фильтр по значению поля
+     * @param selectorWhereSysProp $prop Фильтр по значению поля
      * @return string
      * @throws selectorException
      */
@@ -628,14 +542,24 @@ SQL;
     }
 
     /**
-     * @param int|null $divider
-     * @param int|null $timePoint
-     * @return int
+     * @return void
+     * @throws databaseException
+     * @throws publicException
      */
-    private function getDividerPostfix(?int $divider = null, int $timePoint = null): int {
-        // TODO: make divider account frequency in the right way, now it's really just a divide
-        $divider = $divider ?: $this->tableDivideFrequency;
+    private function calculateTotalRows() {
+        $totalSql = <<<TOTALSQL
+				SELECT FOUND_ROWS()
+TOTALSQL;
 
-        return (int) ceil(date('n', $timePoint ?: time()) / $divider);
+        $totalResult = self::tryQueryResult($totalSql);
+        $totalResult->setFetchType(IQueryResult::FETCH_ROW);
+        $totalRow = 0;
+
+        if ($totalResult->length() > 0) {
+            $fetchResult = $totalResult->fetch();
+            $totalRow = (int) array_shift($fetchResult);
+        }
+
+        $this->totalRows = $totalRow;
     }
 }
