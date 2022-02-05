@@ -8,7 +8,7 @@
     interface iMail
     {
         /**
-         * @param array  $emails Почтовый адреса / список адресов в виде массива
+         * @param array  $emails Почтовый адрес / список адресов в виде массива
          * @param string $subject Тема письма
          * @param string $content Содержимое письма (html5)
          * @param string $filePath Путь к файлу, прикрепляемому к письму

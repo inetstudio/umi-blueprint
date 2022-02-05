@@ -4,12 +4,13 @@ use UmiCms\Service;
 use Mailgun\Mailgun;
 use Inet\Proxy\Mail\iMail;
 use Mailgun\Hydrator\ArrayHydrator;
-use Mailgun\HttpClient\HttpClientConfigurator;
+use Symfony\Component\Dotenv\Dotenv;
 use Mailgun\Model\Message\SendResponse;
+use Mailgun\HttpClient\HttpClientConfigurator;
 
 class gunMail implements iMail
 {
-    /** @const bool VALIDATE_EMAIL нужно ли проверять валидность email (сервис может быть не доступен!) */
+    /** @const bool VALIDATE_EMAIL Нужно ли проверять валидность email (сервис может быть не доступен!) */
     const VALIDATE_EMAIL = false;
 
     /**
@@ -20,19 +21,16 @@ class gunMail implements iMail
      * @throws coreException
      */
     public function sendMail($emails = [], $subject = '', $content = 'default', $filePath = '', $tags = []) {
-        // loading custom config file
-        // TODO: replace with load from .dotenv config
-        $dataModule = cmsController::getInstance()->getModule('data');
-        $config = $dataModule->loadCustomConfig();
+        $emails = is_array($emails) ? $emails : [$emails];
+        if (empty($emails))
+            throw new Exception('Empty Email list');
+
+        $apiKey = $this->getApiKey();
 
         $umiRegistry = Service::Registry();
-        $apiKey = $config->get('mailgun', 'API-Key');
         $domain = Service::DomainDetector()->detectHost();
         $emailFrom = "$domain <{$umiRegistry->get("//settings/email_from")}>";
         $attachment = $filePath ? [['filePath' => $filePath]] : [];
-
-        if (empty($emails))
-            throw new Exception('Empty Email list');
 
         // remove `www.` from domain to qualify it for mailGun api
         $domain = preg_match('~www~', $domain) ? substr($domain, 4) : $domain;
@@ -48,7 +46,6 @@ class gunMail implements iMail
         $isValid = true;
         $result = false;
 
-        $emails = is_array($emails) ? $emails : [$emails];
         foreach ($emails as $emailTo) {
             // email validation on Mailgun
             if (self::VALIDATE_EMAIL) {
@@ -95,5 +92,15 @@ class gunMail implements iMail
         }
 
         return $valResult;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    private function getApiKey() {
+        $dotenv = new Dotenv();
+        $dotenv->load(CURRENT_WORKING_DIR . '/.env');
+
+        return $_ENV['MAILGUN_API_KEY'] ?? null;
     }
 }

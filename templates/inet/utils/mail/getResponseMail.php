@@ -1,5 +1,6 @@
 <?php
 use Inet\Proxy\Mail\iMail;
+use Symfony\Component\Dotenv\Dotenv;
 use Getresponse\Sdk\GetresponseClientFactory;
 use Getresponse\Sdk\Client\Operation\OperationResponse;
 use Getresponse\Sdk\Operation\TransactionalEmails\CreateTransactionalEmail\CreateTransactionalEmail;
@@ -20,11 +21,11 @@ class getResponseMail implements iMail
      * @inheritdoc
      */
     public function sendMail($emails = [], $subject = '', $content = 'default', $filePath = '', $tags = []): OperationResponse {
-        $client = GetresponseClientFactory::createWithApiKey(static::getApiKey());
-
         $emails = is_array($emails) ? $emails : [$emails];
         if (empty($emails))
             throw new Exception('Empty Email list');
+
+        $client = GetresponseClientFactory::createWithApiKey(static::getApiKey());
 
         foreach ($emails as $email) {
             // this id is from a list of the used api available senders
@@ -66,12 +67,9 @@ class getResponseMail implements iMail
      * @return mixed
      */
     private static function getApiKey() {
-        // TODO: replace with load from .dotenv config
+        $dotenv = new Dotenv();
+        $dotenv->load(CURRENT_WORKING_DIR . '/.env');
 
-        /** @var DataCustom $dataModule */
-        $dataModule = cmsController::getInstance()->getModule('data');
-        $config = $dataModule->loadCustomConfig();
-
-        return $config->get('get-response', 'API-Key');
+        return $_ENV['GET_RESPONSE_API_KEY'] ?? null;
     }
 }
