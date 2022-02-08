@@ -3,9 +3,10 @@
 use UmiCms\Service;
 use UmiCms\System\Auth\PasswordHash\WrongAlgorithmException;
 
-class UsersCustom extends def_module
+class UsersCustom extends def_module implements iClassConfigManager
 {
-    use tMail;
+    use tClassConfigManager;
+    use tEventMailsNotification;
 
     /**
      * @var users|UsersMacros $module
@@ -17,6 +18,29 @@ class UsersCustom extends def_module
      */
     private static array $extensions = [
         'UsersCustomHandlers' => '/handlers.php',
+    ];
+
+    /** @var array Конфигурация класса */
+    private static array $classConfig = [
+        'service' => 'MailNotifications',
+        'forgetDoJson' => [
+            'notification'          => 'notification-users-restore-password',
+            'subject-mail-template' => 'users-restore-password-subject',
+            'content-mail-template' => 'users-restore-password-content',
+            'fallback-template'     => [
+                "path" => "users/forget/default",
+                "name" => "mail_verification",
+            ]
+        ],
+        'restore' => [
+            'notification'          => 'notification-users-new-password',
+            'subject-mail-template' => 'users-new-password-subject',
+            'content-mail-template' => 'users-new-password-content',
+            'fallback-template'     => [
+                "path" => "users/restore/default",
+                "name" => "mail_password",
+            ]
+        ],
     ];
 
     /**
@@ -109,7 +133,7 @@ class UsersCustom extends def_module
                 'domain'       => $domain->getCurrentHostName(),
                 'restore_link' => $restoreLink,
                 'login'        => $user->getValue('login'),
-                'email'        => $user->getValue('email'),
+                'email'        => $user->getValue('e-mail'),
                 'userId'       => $userId
             ];
 
@@ -189,7 +213,7 @@ class UsersCustom extends def_module
             'domain'   => Service::DomainDetector()->detect()->getCurrentHostName(),
             'password' => $password,
             'login'    => $user->getValue('login'),
-            'email'    => $user->getValue('email'),
+            'email'    => $user->getValue('e-mail'),
             'userId'   => $userId
         ];
 
