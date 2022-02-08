@@ -19,6 +19,9 @@
             CURRENT_WORKING_DIR . "/templates/inet/utils/mail/uMail.php"
         ],
         'tMail' => [
-            CURRENT_WORKING_DIR . "/templates/inet/utils/mail/tMail.php"
+            CURRENT_WORKING_DIR . "/templates/inet/traits/tMail.php"
+        ],
+        'tEventMailsNotification' => [
+            CURRENT_WORKING_DIR . "/templates/inet/traits/tEventMailsNotification.php"
         ],
 	];

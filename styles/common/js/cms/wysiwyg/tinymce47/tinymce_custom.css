@@ -1,0 +1,39 @@
+/**
+ * Глобальный кастомный css для tinyMCE 4.7.
+ * Подключается в файле tinymce_custom.js.
+ */
+body#tinymce, body#tinymce td, body#tinymce pre {
+	color: #000;
+	margin: 8px;
+	font-family: "Segoe UI", Arial, Tahoma;
+	font-size: 14px;
+}
+
+.mce-visualblocks div:not([data-mce-bogus]) {
+	margin-left: 15px!important;
+	height: auto!important;
+}
+
+.mce-visualblocks div:not([data-mce-bogus]):hover {
+	border: 1px solid red!important;
+}
+
+.mce-visualblocks .about-center__block-img-sm,
+.mce-visualblocks .documents-top__img-sm
+.mce-visualblocks .preparation-section__img-sm {
+	display: block!important;
+}
+
+.mce-visualblocks .hs-carusel-img .swiper-wrapper:not([data-mce-bogus]),
+.mce-visualblocks .more-articles .swiper-wrapper:not([data-mce-bogus]),
+.mce-visualblocks .hs-carusel-license .swiper-wrapper:not([data-mce-bogus]){
+	display: block!important;
+}
+
+.mce-visualblocks .article-page__page-menu {
+	display: block!important;
+}
+
+.mce-visualblocks .tinymce-edit-info {
+	display: block!important;
+}

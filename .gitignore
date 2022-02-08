@@ -3,7 +3,6 @@
 **/.DS_Store
 .env
 docker-compose.override.yml
-/id_vl
 
 # track only using classes
 classes/**/*
@@ -22,9 +21,12 @@ classes/components/users/
 # libraries
 /vendor/
 
-# all styles except icons
+# all styles except icons and mce customs
 styles/**/
 !styles/skins/modern/design/img/tree/
+!styles/common/js/cms/wysiwyg/tinymce47/plugins/*
+!styles/common/js/cms/wysiwyg/tinymce47/tinymce_custom.css
+!styles/common/js/cms/wysiwyg/tinymce47/tinymce_custom.js
 
 # umi installation files
 sys-temp/

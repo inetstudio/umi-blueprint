@@ -9,15 +9,19 @@
 require_once dirname(__FILE__) . '/standalone.php';
 require_once CURRENT_WORKING_DIR . '/templates/inet/installer/extendedInstaller.php';
 
-use \iOutputBuffer as iBuffer;
+use iOutputBuffer as iBuffer;
 use UmiCms\Service;
 
 class TypeExtendingInstaller extends ExtendedInstaller {
     /** @var string TYPES_EXTENSIONS_DIR директория для типов */
     const TYPES_EXTENSIONS_DIR = CURRENT_WORKING_DIR . '/templates/inet/types/';
 
-    /** @var iBuffer $buffer буффер обмена */
-    protected $buffer;
+    /** @var iBuffer $buffer Буфер обмена */
+    protected iOutputBuffer $buffer;
+    /** @var MailNotificationsCollection $mailNotifications */
+    protected $mailNotifications;
+    /** @var MailTemplatesCollection $mailTemplates  */
+    protected $mailTemplates;
 
     /**
      * TypeExtendingInstaller constructor.
@@ -28,10 +32,18 @@ class TypeExtendingInstaller extends ExtendedInstaller {
         parent::__construct();
 
         $this->buffer = Service::Response()->getCurrentBuffer();
+
+        // mail templates services
+        $this->mailNotifications = Service::MailNotifications();
+        $this->mailTemplates = Service::MailTemplates();
     }
 
     /** Execute creation in all forms classes */
     public function executeExtensions() {
+        // load types interface first
+        /** @noinspection PhpIncludeInspection */
+        require_once self::TYPES_EXTENSIONS_DIR . "ITypeExtension.php";
+
         // scan forms classes
         $this->scanExtensionsFolder(self::TYPES_EXTENSIONS_DIR);
 
@@ -60,7 +72,7 @@ class TypeExtendingInstaller extends ExtendedInstaller {
      * @return void
      */
     public function getBuffer() {
-        $this->buffer->push('{success: true}');
+        $this->buffer->push(json_encode(['success' => true]));
         $this->buffer->option('generation-time', true);
         $this->buffer->end();
     }
