@@ -1,27 +1,60 @@
 server {
     listen 80;
-    #root /var/www/${APP_DIR}/public;
+    server_name ${APP_DIR};
     root /var/www/${APP_DIR};
+
+    client_max_body_size 100m;
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-XSS-Protection "1; mode=block";
     add_header X-Content-Type-Options "nosniff";
 
-    index index.php;
-
     charset utf-8;
 
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
+    if ( $request_uri ~ "^/(images|tinymce|install.php|install_update.php|captcha.php|styles|css|\.css|js|runscripts)") {
+        break;
     }
 
-    location = /favicon.ico { access_log off; log_not_found off; }
-    location = /robots.txt  { access_log off; log_not_found off; }
+    if (-e $request_filename) {
+        rewrite ^/(sys\-temp|cache|xmldb|static|packages)\/.*$ /500/ break;
+    }
 
-    error_page 404 /index.php;
+    if (!-e $request_filename) {
+        rewrite ^/sitemap\?([0-9]*).xml /sitemap.php?id=$1 last;
+        rewrite ^(.*)\.xml$  /index.php?xmlMode=force&path=$1&$query_string last;
+        rewrite ^(.*)\.json$ /index.php?jsonMode=force&path=$1&%query_string last;
+        rewrite ^/.*         /index.php?path=$fastcgi_script_name&$query_string last;
+    }
+
+    error_page  405     =200 $uri;
+
+    location ~* ^/(images|files|logs)/.+\.(php|php3|php4|php5|phtml|phps|pl|pm)$ {
+        deny all;
+    }
+
+    location / {
+        rewrite ^/~/([0-9]+)$ /tinyurl.php?id=$1 break;
+        index  index.php;
+    }
+
+    location ~* (config\.ini|install\.ini|install\.log|umi\.nginx\.conf|umibackup) {
+        rewrite ^(.*)$ / permanent;
+    }
+
+    location ^~ /(config\.ini|classes|sys-temp) {
+        deny all;
+    }
+
+    location ^~ /styles/common/other/elfinder/php/ {
+        location ~.*\.(php)?$
+        {
+            deny all;
+        }
+    }
 
     location ~ \.php$ {
         fastcgi_pass php:9000;
+        fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
     }

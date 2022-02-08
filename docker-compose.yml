@@ -48,21 +48,16 @@ services:
       - 9000
     <<: *networks
 
-  redis:
-    image: redis
-    container_name: ${COMPOSE_PROJECT_NAME}-redis
-    ports:
-      - 6379
-    <<: *networks
-
   mysql:
-    image: mysql:5.7.29
+    build:
+      context: ./docker/mysql/
+      dockerfile: ./Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME}-mysql
     restart: unless-stopped
     tty: true
     volumes:
       - ./docker/mysql/db/:/var/lib/mysql
-      - ./docker/mysql/config/my.cnf:/etc/mysql/my.cnf
+      - ./docker/mysql/dump/:/docker-entrypoint-initdb.d
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
@@ -70,27 +65,6 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
       - 3306
-    <<: *networks
-
-  elasticsearch:
-    image: elasticsearch:7.10.1
-    container_name: ${COMPOSE_PROJECT_NAME}-elasticsearch
-    environment:
-      - discovery.type=single-node
-    ports:
-      - 9200
-    <<: *networks
-
-  blackfire:
-    image: blackfire/blackfire
-    container_name: ${COMPOSE_PROJECT_NAME}-blackfire
-    ports:
-      - 8707
-    environment:
-      BLACKFIRE_SERVER_ID: ${BLACKFIRE_SERVER_ID}
-      BLACKFIRE_SERVER_TOKEN: ${BLACKFIRE_SERVER_TOKEN}
-      BLACKFIRE_CLIENT_ID: ${BLACKFIRE_CLIENT_ID}
-      BLACKFIRE_CLIENT_TOKEN: ${BLACKFIRE_CLIENT_TOKEN}
     <<: *networks
 
 networks:
