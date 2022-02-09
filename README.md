@@ -60,7 +60,8 @@ services:
 ## <p><strong>Import DB</strong></p>
 
 > containers need to be running. check statuses with `docker-compose ps`
-- place your DB dump into folder `/docker/mysql/dump/`. Support all default extensions `*.sql/*.sql.gz/*.tgz`
+- place your DB dump (rename it as `backup`) into folder `/docker/mysql/dump/`.
+  Support all default extensions `*.sql/*.sql.gz/*.tgz`
 - use command terminal with `bash` (PowerShell / GitBash on Windows) support and run commands:
 > . /docker/mysql/backup.sh (`.` is a command)\
 > restore_database
