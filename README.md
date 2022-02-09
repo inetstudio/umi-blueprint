@@ -36,7 +36,7 @@
       - ./:/var/www/${COMPOSE_PROJECT_NAME}
     <<: *working_dir
 ```
-> IF your containers already running (check statuses with `docker-compose ps`) \
+> IF your containers already running (check statuses with `docker-compose ps`) and you add services \
 > Stop them with `docker-compose stop`, then build them again with `docker-compose build` \
 > and run `docker-compose up -d`
 
@@ -48,7 +48,7 @@
 > containers need to be running. check statuses with `docker-compose ps`
 - place your DB dump into folder `/docker/mysql/dump/`. Support all default extensions `*.sql/*.sql.gz/*.tgz`
 - use command terminal with `bash` (PowerShell / GitBash on Windows) support and run commands:
-> . /docker/mysql/backup.sh \
+> . /docker/mysql/backup.sh (`.` is a command)\
 > restore_database
 - wait until progress bar finish at 100%
 

@@ -49,7 +49,7 @@ window.mceCustomSettings = {
 	// @link https://www.tinymce.com/docs/configure/content-appearance/#content_css
 	content_css : [
 		'/styles/common/js/cms/wysiwyg/tinymce47/tinymce_custom.css',
-		'/templates/endomos/public/dist/css/styles.css',
+		// '/templates/PROJECT/public/dist/css/styles.css',
 	],
 	external_plugins: {
 		'codemirror': '/styles/common/js/cms/wysiwyg/tinymce47/plugins/codemirror/plugin.min.js',
@@ -90,21 +90,21 @@ window.mceCustomSettings = {
 	// Тулбар
 	toolbar: 'paste pastetext undo redo removeformat link unlink anchor image media table code blockquote ' +
 		'formatselect fontselect fontsizeselect bold italic strikethrough underline alignleft aligncenter alignright ' +
-		'alignjustify bullist numlist outdent indent forecolor backcolor | visualblocks preview serviceblock articleblock',
+		'alignjustify bullist numlist outdent indent forecolor backcolor | visualblocks preview articleblock',
 
 	menubar: false,
 
 	visualblocks_default_state: true,
 
 	// Расширение разрешенных html-элементов
-	extended_valid_elements : "a[*],button[*|v-on],template[*],span[*],div[*|v-opener|v-opener.mobile],svg[*],path[*],form-back-call[*],section-yandex-map[*],form-request[*],doctor-img-list[*],form-examination[*],line[*],defs[*],radialGradient[*],radial-gradient[*],circle[*],stop[*]",
+	extended_valid_elements : "a[*],button[*|v-on],template[*],span[*],div[*|v-opener|v-opener.mobile],svg[*],path[*],form-back-call[*],section-yandex-map[*],line[*],defs[*],radial-gradient[*],circle[*],stop[*]",
 
-	custom_elements : 'section-yandex-map,form-back-call,form-request,doctor-img-list,form-examination',
+	custom_elements : 'section-yandex-map,form-back-call',
 
 	forced_root_block : "div",
 
 	init_instance_callback: function (editor) {
-		const customElements = ['section-yandex-map', 'form-back-call', 'form-request', 'doctor-img-list', 'form-examination']
+		const customElements = ['section-yandex-map', 'form-back-call']
 
 		editor.on('KeyUp', function (e) {
 			let editor = tinyMCE.activeEditor
