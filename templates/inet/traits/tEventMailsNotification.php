@@ -139,6 +139,7 @@ trait tEventMailsNotification
     }
 
     /**
+     * For backward compatibility
      * @param array $template
      * @return void
      */

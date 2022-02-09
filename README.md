@@ -16,6 +16,20 @@
 - run command in terminal `cp .env.local .env` _(in project root folder)_
 - `.env` -- replace `placeholder` data with the real values (copy DB credentials _from / to_ `config.ini`)
 - start docker in terminal -- `docker-compose up -d` _(in project root folder)_
+- add `COMPOSE_PROJECT_NAME` *value* from `.env` to your `hosts` as `127.0.0.1 project_name_you_choose`
+- project will be available by the address `http://project_name_you_choose:port`\
+  type in terminal `docker-compose ps` and get `port` from `nginx` service. \
+  or you could add _(in project root folder)_ and use `docker-compose.override.yml` where you override ports
+
+``` bash
+# Example of docker-compose.override.yml
+services:
+  nginx:
+    ports:
+      - 7000:80
+
+`7000` is a desired port.
+```
 
 > IF you need NODE / REDIS services for development \
 > add this to `docker-compose.yml` >> `services` section

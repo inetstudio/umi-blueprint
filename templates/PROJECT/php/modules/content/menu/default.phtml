@@ -10,8 +10,8 @@
 
     $user = $this->getObjectById(Service::Auth()->getUserId());
     $groups = $user->getValue('groups');
-    array_push($groups, $guest);
-    
+    $groups[] = $guest;
+
     $upperCase = $variables['to_upper_case'] ?? false;
 ?>
 

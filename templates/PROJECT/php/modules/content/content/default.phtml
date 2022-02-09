@@ -4,21 +4,21 @@
     /** @var umiHierarchyElement $page */
 
     $page = $variables['page'];
-    $parent = $this->getPageById($page->getParentId());
 ?>
 
-<?php if (preg_match('~cabinet~', $this->getCommonVar('request_uri'))) : ?>
+<?php if (preg_match('~cabinet~', $this->getCommonVar('request_uri'))) :
+    echo $this->render($variables, 'modules/content/content/cabinet/default');
+else :
+    $sdt = $this->isSpecialPageDataType($page);
 
-    <?= $this->render($variables, 'modules/content/content/cabinet/default'); ?>
-
-<?php else : ?>
-
-    <?php if ($page->getValue('use_named_template')) {
-        echo $this->render($variables, $this->getNamedTemplate($variables));
-    } elseif (($sdt = $this->isSpecialPageDataType($page)) && $sdt['status']) {
-        echo $this->render($variables, $sdt['template']);
-    } else {
-        echo $page->getValue('content');
-    } ?>
-
-<?php endif; ?>
+    switch (true) {
+        case $page->getValue('use_named_template'):
+            echo $this->render($variables, $this->getNamedTemplate($variables));
+            break;
+        case $sdt && $sdt['status']:
+            echo $this->render($variables, $sdt['template']);
+            break;
+        default:
+            echo $page->getValue('content');
+    }
+endif; ?>
