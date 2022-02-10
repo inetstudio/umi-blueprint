@@ -23,7 +23,6 @@ services:
     depends_on:
       - php
       - mysql
-      - redis
     ports:
       - 80
     <<: *networks
