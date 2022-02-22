@@ -15,3 +15,9 @@ indent_size = 2
 
 [*.vue]
 indent_size = 2
+
+[{*.css, *.json}]
+indent_size = 2
+
+[docker-compose.yml]
+indent_size = 4

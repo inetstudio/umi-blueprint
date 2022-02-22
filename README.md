@@ -1,89 +1,130 @@
 # umi-blueprint
 <p align="center"><img src="https://www.umi-cms.ru/templates/umi/images/main_logo.png?2021" alt="umi_logo"></p>
 
-## <p><strong>Prepare virtual machine</strong></p>
+1. install [docker](https://docs.docker.com/engine/install/)
 
-- install [docker](https://docs.docker.com/engine/install/)
-- run command in terminal `cp .env.local .env` _(in project root folder)_
-- `.env` -- replace `placeholder` data with the real values (copy DB credentials _to_ `config.ini`)
-- start docker in terminal -- `docker-compose up -d` _(in project root folder)_
-- add `COMPOSE_PROJECT_NAME` *value* from `.env` to your `hosts` as `127.0.0.1 project_name_you_choose`
-- project will be available by the address `http://project_name_you_choose:port`\
-  type in terminal `docker-compose ps` and get `port` from `nginx` service. \
-  or you could add _(in project root folder)_ and use `docker-compose.override.yml` where you override ports
+    - on Windows turn on your installed WSL distribution in Docker: _**settings** ~> resources_
+    - check that your BIOS settings has a **Virtualization** option and it's `enabled`
 
-``` bash
-# Example of docker-compose.override.yml
-services:
-  nginx:
-    ports:
-      - 7000:80
+2. run command in terminal `cp .env.local .env` _(in project root folder)_
 
-`7000` is a desired port.
-```
+3. `.env` -- replace `APP_NAME`, `COMPOSE_PROJECT_NAME` to your app name; replace `DB_HOST` to `mysql`
+    ### Example:
 
-> IF you need NODE / REDIS services for development \
-> add this to `docker-compose.yml` >> `services` section
-``` bash
-  redis:
-    image: redis
-    container_name: ${COMPOSE_PROJECT_NAME}-redis
-    ports:
-      - 6379
-    <<: *networks
+          APP_NAME=umi-blueprint
+          DB_HOST=mysql
+          COMPOSE_PROJECT_NAME=umi-blueprint.test
 
-  node:
-    build:
-      context: ./docker/node/
-      dockerfile: ./Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME}-node
-    volumes:
-      - ./:/var/www/${COMPOSE_PROJECT_NAME}
-    <<: *working_dir
-```
-> For REDIS your also need to add `nginx` dependency
-``` bash
-  nginx:
-    depends_on:
-      ...
-      - redis
-```
-> IF your containers already running (check statuses with `docker-compose ps`) and you add services \
-> Stop them with `docker-compose stop`, then build them again with `docker-compose build` \
-> and run `docker-compose up -d`
+4. IF you need NODE / REDIS services for development, add this to `docker-compose.yml` >> `services` section
+    ``` bash
+      redis:
+        image: redis
+        container_name: ${COMPOSE_PROJECT_NAME}-redis
+        ports:
+          - 6379
+        <<: *networks
 
-> IF you need a certain version of NODE, specify it in config \
-> `/docker/node/Dockerfile` >> `FROM node:specific_version_number` _(autocomplete will give you all options)_
+      node:
+        build:
+          context: ./docker/node/
+          dockerfile: ./Dockerfile
+        container_name: ${COMPOSE_PROJECT_NAME}-node
+        volumes:
+          - ./:/var/www/${COMPOSE_PROJECT_NAME}
+        <<: *working_dir
+    ```
 
-## <p><strong>Prepare UMI environment</strong></p>
+    > For REDIS your also need to add `nginx` dependency
+    ``` bash
+      nginx:
+        depends_on:
+          ...
+          - redis
+    ```
+    > IF your containers already running (check statuses with `docker-compose ps`) and you add services \
+    rebuild them with `docker-compose up -d --build` \
+    IF you need a certain version of NODE, specify it in config \
+    `/docker/node/Dockerfile` >> `FROM node:specific_version_number` _(autocomplete will give you all options)_
 
-- install [UMI](https://www.umi-cms.ru/downloads/) in _trial_ mode, `without template`
-- fill DB host field as `mysql` (_during the installation_)
-- change the folder template name of you `PROJECT` inside _templates_ folder
+    Docker generates dynamic ports every time when you build containers.
+    you can add _(in project root folder)_ `docker-compose.override.yml` to make your project ports static. So after container's rebuild you will always see your project on the certain port:
+
+    ``` bash
+    # Example of docker-compose.override.yml
+    services:
+      nginx:
+        ports:
+          - 7000:80
+
+      mysql:
+        ports:
+          - 7706:3306
+      # you may need it for laravel projects in case of user rights error
+      php:
+        user: "1000:1000"
+
+    # `7000` is a desired port.
+    ```
+
+5. add `COMPOSE_PROJECT_NAME` *value* from `.env` to your `hosts` file as `127.0.0.1 project_name_you_choose`
+
+6. change the folder template name of you `PROJECT` inside _templates_ folder
+
+7. start docker in terminal -- `docker-compose up -d` _(in project root folder)_
+
+8. type in terminal `docker-compose ps` and get `port` from `nginx` service (or use `docker-compose.override` values).
+
+9. project will be available by the address `http://project_name_you_choose:port`
+
+10. **Import DB** (_you have 2 options_)
+    > containers need to be running. check statuses with `docker-compose ps`
+
+    > ## First option - command line
+    > - place your DB dump (rename it as `backup`) into folder `/docker/mysql/dump/` \
+        Support all default extensions `*.sql/*.sql.gz/*.tgz`
+    >> if you have problems with import archived mysql files then use `gunzip` on file to unzip it first
+    > - use command terminal with `bash` (PowerShell / GitBash on Windows) support and run commands:
+    > ``` bash
+    >  > . /docker/mysql/backup.sh (`.` is a command)
+    >  > restore_database
+    > ```
+    >
+    > - wait until progress bar finish at 100%
+
+    **OR**
+
+    > ## Second option - manual import
+    > You can add your database dump manually.
+    > - set database connection via any database gui (Workbench, MyAdmin, Navicat, etc.): \
+        get credentials from `.env` + `docker-compose ps` and get `port` from `mysql`
+    > - import your DB dump to database
+
+12. install [UMI](https://www.umi-cms.ru/downloads/) in _trial_ mode, `without template`
+
+    - during the installation fill DB host field as `mysql` and set DB credentials from your `.env` file
+
+## <p><strong>After UMI installed</strong></p>
+
 - `config.ini` *inside* `PROJECT` folder -- replace `PROJECT` with the name of you project
 - root `config.ini` in *[connections]* section -- change _mysql_ host to `core.host = "mysql"`
-- all resources (js/css/fonts/images etc.) are placed in `../public/` folder >> inside `PROJECT` folder
-- `sitePhpExtension` class -- replace `PROJECT` with correct settings _"container_id"_
+- `templates/PROJECT/classes/sitePhpExtension.php` -- replace `PROJECT` inside with correct settings _"container_id"_
+
 - add all dependencies to `composer.json` and run `docker-compose exec php composer install` _(in project root folder)_
 
-## <p><strong>Import DB</strong></p>
-
-> containers need to be running. check statuses with `docker-compose ps`
-- place your DB dump (rename it as `backup`) into folder `/docker/mysql/dump/`.
-  Support all default extensions `*.sql/*.sql.gz/*.tgz`
-- use command terminal with `bash` (PowerShell / GitBash on Windows) support and run commands:
-> . /docker/mysql/backup.sh (`.` is a command)\
-> restore_database
-- wait until progress bar finish at 100%
+- all resources (js/css/fonts/images etc.) are placed in `templates/PROJECT/public/`. Run commands to build frontend _(if exist)_.
 
 ## <p><strong>Prepare CI/CD environment</strong></p>
 
-- `.git-ftp-ignore` -- replace `PROJECT` with the name of you project folder
 - `.gitignore` -- replace `PROJECT` with the name of you project folder
+- `.git-ftp-ignore` -- replace `PROJECT` with the name of you project folder
+
+> no need for frontend devs >>
+
 - add `PROD_USERNAME` environment variable inside VCS system (bitbucket.org)
 - `bitbucket-pipelines.yml` -- replace `PROJECT` with the name of you project folder / domain name of you dev env
 - after init commit change _deploy mode_ for your env branch `DEP_MODE="init -v --insecure"` from `init` to `push`
 
+> << no need for frontend devs
 ## <p><strong>Prepare Sentry.io monitoring integration</strong></p>
 
 - create 2 separate projects for `frontend` and `backend` teams with the `PROJECT-frontend/backend` names
