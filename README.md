@@ -10,13 +10,14 @@
 
 3. `.env` -- replace `APP_NAME`, `COMPOSE_PROJECT_NAME` to your app name; replace `DB_HOST` to `mysql`
     ### Example:
-
-          APP_NAME=umi-blueprint
-          DB_HOST=mysql
-          COMPOSE_PROJECT_NAME=umi-blueprint.test
+    ```bash
+    APP_NAME=umi-blueprint
+    DB_HOST=mysql
+    COMPOSE_PROJECT_NAME=umi-blueprint.test
+    ```
 
 4. IF you need NODE / REDIS services for development, add this to `docker-compose.yml` >> `services` section
-    ``` bash
+    ```yaml
       redis:
         image: redis
         container_name: ${COMPOSE_PROJECT_NAME}-redis
@@ -35,7 +36,7 @@
     ```
 
     > For REDIS your also need to add `nginx` dependency
-    ``` bash
+    ```yaml
       nginx:
         depends_on:
           ...
@@ -49,7 +50,7 @@
     Docker generates dynamic ports every time when you build containers.
     you can add _(in project root folder)_ `docker-compose.override.yml` to make your project ports static. So after container's rebuild you will always see your project on the certain port:
 
-    ``` bash
+    ```yaml
     # Example of docker-compose.override.yml
     services:
       nginx:
@@ -84,7 +85,7 @@
         Support all default extensions `*.sql/*.sql.gz/*.tgz`
     >> if you have problems with import archived mysql files then use `gunzip` on file to unzip it first
     > - use command terminal with `bash` (PowerShell / GitBash on Windows) support and run commands:
-    > ``` bash
+    > ```sh
     >  > . /docker/mysql/backup.sh (`.` is a command)
     >  > restore_database
     > ```
