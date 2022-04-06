@@ -77,6 +77,8 @@
 
 9. project will be available by the address `http://project_name_you_choose:port`
 
+    in case of 403 error go to nginx cli in docker desktop and type `chmod -R 775 [folder name]`
+
 10. **Import DB** (_you have 2 options_)
     > containers need to be running. check statuses with `docker-compose ps`
 
