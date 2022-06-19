@@ -1,0 +1,170 @@
+# This is an I-Net UMI workflow that is triggered by automation
+name: Deployment workflow
+
+# Environment variables
+env:
+  DEV_HOST: inet.studio|digital
+  DEV_PATH: /var/www/PROJECT.inet.digital/
+  PROD_HOST: --
+  PROD_PATH: --
+  ASSETS_PATH: /templates/PROJECT/public/
+  SLACK_CHANNEL_ID: ''
+
+on:
+  push:
+    branches:
+    - dev
+    - production
+
+jobs:
+  define-variables:
+    name: Define environment variables based on the current branch
+    runs-on: ubuntu-latest
+
+    # Map a step output to a job output
+    outputs:
+      HOST: ${{ steps.variables.outputs.HOST }}
+      SSH_PATH: ${{ steps.variables.outputs.SSH_PATH }}
+      DEP_MODE: ${{ steps.variables.outputs.DEP_MODE }}
+
+    steps:
+    - name: Store variables in outputs
+      id: variables
+      run: |
+        if [[ ${{ github.ref_name }} == 'production' ]]; then
+          export HOST=$PROD_HOST
+          export SSH_PATH=$PROD_PATH
+          export DEP_MODE="init -v --insecure"
+        else
+          export HOST=$DEV_HOST
+          export SSH_PATH=$DEV_PATH
+          export DEP_MODE="init -v --insecure"
+        fi
+
+        echo "::set-output name=HOST::$HOST"
+        echo "::set-output name=SSH_PATH::$SSH_PATH"
+        echo "::set-output name=DEP_MODE::$DEP_MODE"
+
+  deploy-ssh:
+    name: Deploy to server via GIT through SSH protocol
+    runs-on: ubuntu-latest
+    needs: define-variables
+    container: bitnami/git
+    steps:
+      - name: Trust git directory
+        run: git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+
+      - name: Get latest code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 10
+
+      - name: Install & update `git-ftp`
+        run: apt-get update && apt-get -qq install git-ftp
+
+      - name: Create .ssh variables
+        run: |
+          mkdir -p ~/.ssh/
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          echo "${{ secrets.deploy_key }}" > ~/.ssh/id_rsa
+
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
+
+      - name: Upload latest changes
+        env:
+          HOST: ${{ needs.define-variables.outputs.HOST }}
+          SSH_PATH: ${{ needs.define-variables.outputs.SSH_PATH }}
+          DEP_MODE: ${{ needs.define-variables.outputs.DEP_MODE }}
+        run: git ftp $DEP_MODE --user "${{ secrets.deploy_user }}" --key "$HOME/.ssh/id_rsa" "sftp://$HOST$SSH_PATH"
+
+      - name: Executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@master
+        env:
+          BRANCH: ${{ github.ref_name }}
+          ENVS_PATH: $ASSETS_PATH
+        with:
+          host: ${{ needs.define-variables.outputs.HOST }}
+          username: ${{ secrets.deploy_user }}
+          key: ${{ secrets.deploy_key }}
+          port: 22
+          envs: BRANCH,ENVS_PATH
+          script: |
+            cd ${{ needs.define-variables.outputs.SSH_PATH }}
+            bash ./deploy-out.sh
+
+  build-and-deploy-assets:
+    name: Build and deploy assets to server using SSH
+    runs-on: ubuntu-latest
+    needs: define-variables
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          cache: 'yarn'
+          cache-dependency-path: 'yarn.lock'
+
+      - name: Build assets
+        run: |
+          yarn install
+          npm run ${{ github.ref_name }}
+
+      - name: Create .ssh variables
+        run: |
+          mkdir -p ~/.ssh/
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          echo "${{ secrets.deploy_key }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Deploy assets
+        env:
+          HOST: ${{ needs.define-variables.outputs.HOST }}
+          SSH_PATH: ${{ needs.define-variables.outputs.SSH_PATH }}
+        run: cd $ASSETS_PATH && rsync -e "ssh -i $HOME/.ssh/id_rsa -o StrictHostKeyChecking=no"
+          -rlp --compress --delete . ${{ secrets.deploy_user }}@$HOST:$SSH_PATH$ASSETS_PATH
+
+  slack-notifications:
+    name: Send status notification to Slack after all the jobs are finished
+    runs-on: ubuntu-latest
+    needs: [deploy-ssh]
+    if: always()
+    steps:
+      - name: Get short SHA & formatted commit
+        id: short
+        run: |
+          export commit_header=$(echo "${{ github.event.pull_request.title || github.event.head_commit.message }}" | sed 's/\n/\\n/g')
+          echo "::set-output name=sha7::$(echo ${{ github.sha }} | cut -c1-7)"
+          echo "::set-output name=commit_header::$commit_header"
+
+      - name: Post notification to a Slack channel
+        uses: slackapi/slack-github-action@v1.16.0
+        with:
+          # Slack channel id, channel name, or user id to post message.
+          channel-id: $SLACK_CHANNEL_ID
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "attachments": [
+                 {
+                   "mrkdwn_in": ["text", "pretext"],
+                   "color": "${{ env.SLACK_COLOR }}",
+                   "pretext": "${{ env.SLACK_ICON }} Deployment to *${{ github.ref_name }}* _${{ env.JOBS_STATUS }}_. (<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }} #${{ github.run_number }}>)",
+                   "author_name": "${{ env.COMMIT_USER }}",
+                   "author_link": "${{ github.event.sender.html_url }}",
+                   "author_icon": "${{ github.event.sender.avatar_url }}",
+                   "text": "`<${{ env.COMMIT_URL }}|${{ env.SHA7 }}>` ${{ steps.short.outputs.commit_header }}",
+                   "footer": "${{ github.event.repository.name }}",
+                   "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png"
+                 }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_COLOR: ${{ contains(needs.*.result, 'failure') && 'danger' || 'good' }}
+          SLACK_ICON: ${{ contains(needs.*.result, 'failure') && ':no_entry:' || ':white_check_mark:' }}
+          COMMIT_URL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
+          COMMIT_USER: ${{ github.event.pull_request.user.login || github.event.head_commit.author.name }}
+          JOBS_STATUS: ${{ contains(needs.*.result, 'failure') && 'failed' || 'successful' }}
+          SHA7: ${{ steps.short.outputs.sha7 }}

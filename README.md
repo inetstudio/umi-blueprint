@@ -121,14 +121,21 @@
 - `.gitignore` -- replace `PROJECT` with the name of you project folder
 - `.git-ftp-ignore` -- replace `PROJECT` with the name of you project folder
 
-> no need for frontend devs >>
+> frontend **can skip** this step `>>`
 
-- add `PROD_USERNAME` environment variable inside VCS system (bitbucket.org)
+### Bitbucket.org
+- add `PROD_USERNAME` environment variable inside VCS system
 - `bitbucket-pipelines.yml` -- replace `PROJECT` with the name of you project folder / domain name of you dev env
-- after init commit change _deploy mode_ for your env branch `DEP_MODE="init -v --insecure"` from `init` to `push`
 
-> << no need for frontend devs
-## <p><strong>Prepare Sentry.io monitoring integration</strong></p>
+### GitHub.com
+- add `DEPLOY_USER` / `DEPLOY_KEY` (private) and `SLACK_BOT_TOKEN` to secrets section
+- `.github/workflows/deploy-pipelines.yml` -- replace `PROJECT` with the name of you project folder / domain name of you dev env
+- fill all necessary variables in `env` section
+
+After init commit change _deploy mode_ for your env branch `DEP_MODE="init -v --insecure"` from `init` to `push`
+
+> `<<` frontend **can skip** this step
+## <p><strong>Prepare Sentry.io monitoring integration</strong></p> <span style="color:red">Temporary inactive</span>
 
 - create 2 separate projects for `frontend` and `backend` teams with the `PROJECT-frontend/backend` names
 - add `VERSION_POSTFIX` environment variable inside _VCS_ system (bitbucket.org) which will represent your `PROJECT` name

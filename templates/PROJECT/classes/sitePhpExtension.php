@@ -314,7 +314,6 @@
             return $this->getTemplateEngine()->getCommonVar('pre_lang') . "/udata//vote/setElementRating//$pageId";
         }
 
-
         /**
          * Возвращает объект настроек сайта
          * @return iUmiObject|bool
@@ -327,5 +326,15 @@
             $settingsContainerId = $settings->getIdByCustomId(self::SITE_SETTINGS_ALIAS);
 
             return umiObjectsCollection::getInstance()->getObject($settingsContainerId);
+        }
+
+        /**
+         * @return mixed|null
+         */
+        public function getEnv() {
+            /** @var DataCustom $dataModule */
+            $dataModule = cmsController::getInstance()->getModule('data');
+            $dataModule->loadEnv();
+            return $_ENV['SITE_ENV'] ?? null;
         }
     }

@@ -1,5 +1,6 @@
 <?php
 use UmiCms\Classes\Components\Data\FormSaver;
+use Symfony\Component\Dotenv\Dotenv;
 use UmiCms\Service;
 
 class DataCustom extends def_module {
@@ -47,7 +48,7 @@ class DataCustom extends def_module {
                 'error'    => $uploads['error'][$i] ?? null,
                 'size'     => $uploads['size'][$i] ?? null
             ];
-            $result = $this->uploadFile($fileData, "./files/uploads/{$uploadFolder}");
+            $result = $this->uploadFile($fileData, "./files/uploads/$uploadFolder");
 
             if (isset($result['error'])) {
                 return ['success' => false, 'error' => $result['error']];
@@ -197,6 +198,14 @@ class DataCustom extends def_module {
         }
 
         return $config;
+    }
+
+    /**
+     * @return void
+     */
+    public function loadEnv(): void {
+        $dotenv = new Dotenv();
+        $dotenv->load(CURRENT_WORKING_DIR.'/.env');
     }
 
     //endregion
