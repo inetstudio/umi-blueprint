@@ -9,7 +9,7 @@ class ArticlePageBuilder extends AbstractEntitiesViewBuilder
         return $this->selector = $selector;
     }
 
-    public function generateViewStructure(iUmiHierarchyElement $element): IPageEntitiesViewBuilder {
+    public function handleWithView(iUmiHierarchyElement $element): IPageEntitiesViewBuilder {
         $this->view = new ArticlePageView($element);
 
         return $this;

@@ -59,7 +59,7 @@ class ContentCustom extends def_module
         }
 
         $builder->getSelectorRequest();
-        $builder->applySelectorHierarchy($parentId, 2);
+        $builder->applySelectorHierarchy($parentId, $builder::LEVEL);
         $builder->applySelectorLimits($limit);
         $builder->applySelectorFilters();
         $builder->applySelectorOrder($parent);
@@ -73,7 +73,7 @@ class ContentCustom extends def_module
             if (!$page instanceof iUmiHierarchyElement)
                 continue;
 
-            $items[] = $builder->generateViewStructure($page)
+            $items[] = $builder->handleWithView($page)
                 ->getView()
                 ->getStructure();
 

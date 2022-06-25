@@ -1,6 +1,8 @@
 bitbucket-pipelines.yml
 docker-compose.yml
+.editorconfig
 templates/PROJECT/public/html*
 templates/PROJECT/src*
 vendor*
 docker*
+.github*

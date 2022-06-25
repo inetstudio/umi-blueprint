@@ -3,11 +3,11 @@ name: Deployment workflow
 
 # Environment variables
 env:
-  DEV_HOST: inet.studio|digital
-  DEV_PATH: /var/www/PROJECT.inet.digital/
+  DEV_HOST: inet.{studio}|{digital}
+  DEV_PATH: /var/www/PROJECT.inet.{studio}|{digital}/
   PROD_HOST: --
   PROD_PATH: --
-  ASSETS_PATH: /templates/PROJECT/public/
+  ASSETS_PATH: ./templates/PROJECT/public/
   SLACK_CHANNEL_ID: ''
 
 on:
@@ -25,7 +25,6 @@ jobs:
     outputs:
       HOST: ${{ steps.variables.outputs.HOST }}
       SSH_PATH: ${{ steps.variables.outputs.SSH_PATH }}
-      DEP_MODE: ${{ steps.variables.outputs.DEP_MODE }}
 
     steps:
     - name: Store variables in outputs
@@ -34,16 +33,13 @@ jobs:
         if [[ ${{ github.ref_name }} == 'production' ]]; then
           export HOST=$PROD_HOST
           export SSH_PATH=$PROD_PATH
-          export DEP_MODE="init -v --insecure"
         else
           export HOST=$DEV_HOST
           export SSH_PATH=$DEV_PATH
-          export DEP_MODE="init -v --insecure"
         fi
 
         echo "::set-output name=HOST::$HOST"
         echo "::set-output name=SSH_PATH::$SSH_PATH"
-        echo "::set-output name=DEP_MODE::$DEP_MODE"
 
   deploy-ssh:
     name: Deploy to server via GIT through SSH protocol
@@ -59,24 +55,14 @@ jobs:
         with:
           fetch-depth: 10
 
-      - name: Install & update `git-ftp`
-        run: apt-get update && apt-get -qq install git-ftp
-
-      - name: Create .ssh variables
-        run: |
-          mkdir -p ~/.ssh/
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          echo "${{ secrets.deploy_key }}" > ~/.ssh/id_rsa
-
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
-
-      - name: Upload latest changes
-        env:
-          HOST: ${{ needs.define-variables.outputs.HOST }}
-          SSH_PATH: ${{ needs.define-variables.outputs.SSH_PATH }}
-          DEP_MODE: ${{ needs.define-variables.outputs.DEP_MODE }}
-        run: git ftp $DEP_MODE --user "${{ secrets.deploy_user }}" --key "$HOME/.ssh/id_rsa" "sftp://$HOST$SSH_PATH"
+      - name: rsync deployments
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          switches: -rlz --verbose --progress --exclude-from=".git-ftp-ignore" --exclude=".git*"
+          remote_host: ${{ needs.define-variables.outputs.HOST }}
+          remote_path: ${{ needs.define-variables.outputs.SSH_PATH }}
+          remote_user: ${{ secrets.deploy_user }}
+          remote_key: ${{ secrets.deploy_key }}
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
@@ -90,6 +76,8 @@ jobs:
           port: 22
           envs: BRANCH,ENVS_PATH
           script: |
+            export BRANCH=$BRANCH
+            export ENVS_PATH=$ENVS_PATH
             cd ${{ needs.define-variables.outputs.SSH_PATH }}
             bash ./deploy-out.sh
 
@@ -128,7 +116,7 @@ jobs:
   slack-notifications:
     name: Send status notification to Slack after all the jobs are finished
     runs-on: ubuntu-latest
-    needs: [deploy-ssh]
+    needs: [deploy-ssh, build-and-deploy-assets]
     if: always()
     steps:
       - name: Get short SHA & formatted commit

@@ -21,7 +21,7 @@ abstract class AbstractEntitiesViewBuilder implements IPageEntitiesViewBuilder
     }
 
     public function applySelectorLimits(int $limit = 0, bool $ignorePaging = true): void {
-        if (!$ignorePaging) {
+        if (!$ignorePaging && $limit) {
             $currentPage = (int)getRequest('p');
             $this->selector->limit($currentPage * $limit, $limit);
         }
@@ -31,9 +31,8 @@ abstract class AbstractEntitiesViewBuilder implements IPageEntitiesViewBuilder
         $field = $element->getValue('sort_field');
         $order = in_array($sortOrder, ['asc', 'desc', 'rand']) ? $sortOrder : 'asc';
 
-        if ($this->selector->searchField($field)) {
-            $this->selector->order($field)->$order();
-        }
+        $field = $this->selector->searchField($field) ? $field : 'ord';
+        $this->selector->order($field)->$order();
     }
 
     public function applySelectorFilters(): void {
@@ -55,17 +54,17 @@ abstract class AbstractEntitiesViewBuilder implements IPageEntitiesViewBuilder
         return $this->view;
     }
 
-    /**
-     * @return Closure|null
-     */
-    public function getLazyView(): ?Closure {
-        return $this->lazyView;
-    }
-
-    public function generateViewStructure(iUmiHierarchyElement $element): IPageEntitiesViewBuilder {
+    public function handleWithView(iUmiHierarchyElement $element): IPageEntitiesViewBuilder {
         $lazyView = $this->getLazyView();
         $this->view = is_callable($lazyView) ? $lazyView($element) : new DefaultPageView($element);
 
         return $this;
+    }
+
+    /**
+     * @return Closure|null
+     */
+    private function getLazyView(): ?Closure {
+        return $this->lazyView;
     }
 }

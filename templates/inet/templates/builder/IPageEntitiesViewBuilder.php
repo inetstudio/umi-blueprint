@@ -6,13 +6,16 @@
  */
 interface IPageEntitiesViewBuilder
 {
+    /** @var int $LEVEL Depth of selector search scope */
+    const LEVEL = 2;
+
     public function getSelectorRequest(): selector;
 
     public function getSelectorResult(): array;
 
     public function getSelectorLength(): int;
 
-    public function applySelectorHierarchy(int $parent = null, int $level = 1): void;
+    public function applySelectorHierarchy(int $parent = null, int $level = self::LEVEL): void;
 
     public function applySelectorLimits(int $limit, bool $ignorePaging = true): void;
 
@@ -20,7 +23,7 @@ interface IPageEntitiesViewBuilder
 
     public function applySelectorOrder(iUmiHierarchyElement $element): void;
 
-    public function generateViewStructure(iUmiHierarchyElement $element): IPageEntitiesViewBuilder;
+    public function handleWithView(iUmiHierarchyElement $element): IPageEntitiesViewBuilder;
 
     public function getView(): IPageView;
 }
