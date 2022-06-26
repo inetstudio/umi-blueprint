@@ -42,10 +42,9 @@ jobs:
         echo "::set-output name=SSH_PATH::$SSH_PATH"
 
   deploy-ssh:
-    name: Deploy to server via GIT through SSH protocol
+    name: Deploy to server using rsync
     runs-on: ubuntu-latest
     needs: define-variables
-    container: bitnami/git
     steps:
       - name: Trust git directory
         run: git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
