@@ -1,6 +1,6 @@
 <?php
 /**
- * Created by Maxim Seredinskiy, Maxim Rakhmankin
+ * Created by Maxim Seredinskiy, Maxim Rakhmankin, Evgenii Ioffe
  * @author Maxim Rakhmankin, Maxim Seredinskiy <support@inetstudio.ru>
  * @copyright Copyright (c) 2021, Maxim Seredinskiy, Maxim Rakhmankin
  */
@@ -44,7 +44,7 @@ class TypeExtendingInstaller extends ExtendedInstaller {
         /** @noinspection PhpIncludeInspection */
         require_once self::TYPES_EXTENSIONS_DIR . "ITypeExtension.php";
 
-        // scan forms classes
+        // scan types classes
         $this->scanExtensionsFolder(self::TYPES_EXTENSIONS_DIR);
 
         // get all extensions
@@ -60,11 +60,25 @@ class TypeExtendingInstaller extends ExtendedInstaller {
      * Execute extensions creation methods
      */
     private function plugAndExecuteAllExtensions() {
+        $executeByPriority = [];
+
         foreach ($this->extensions as $extension) {
             $extensionClass = new $extension();
             if ($extensionClass instanceof ITypeExtension) {
-                $extensionClass->execute();
+                // get priority value
+                $priority = $extensionClass->getPriority();
+                $executeByPriority[$priority][] = $extensionClass;
             }
+        }
+
+        ksort($executeByPriority);
+        foreach ($executeByPriority as $extensions) {
+            array_walk(
+                $extensions,
+                fn($extension) =>
+                    /** @var ITypeExtension $extension */
+                    $extension->execute()
+            );
         }
     }
 

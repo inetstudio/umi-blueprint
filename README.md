@@ -42,9 +42,9 @@
           ...
           - redis
     ```
-    > IF your containers already running (check statuses with `docker-compose ps`) and you add services \
+    > IF your containers already running (check statuses with `docker-compose ps`) and you are adding new services, \
     rebuild them with `docker-compose up -d --build` \
-    IF you need a certain version of NODE, specify it in config \
+    IF you need a certain version of NODE, specify it in the config \
     `/docker/node/Dockerfile` >> `FROM node:specific_version_number` _(autocomplete will give you all options)_
 
     Docker generates dynamic ports every time when you build containers.
@@ -79,7 +79,7 @@
 
     in case of 403 error go to nginx cli in docker desktop and type `chmod -R 775 [folder name]`
 
-10. **Import DB** (_you have 2 options_)
+10. **Import DB** (_you have 2 options_) <span style="color:red">After installing UMI / pulling core files from digital</span>
     > containers need to be running. check statuses with `docker-compose ps`
 
     > ## First option - command line
@@ -102,7 +102,7 @@
         get credentials from `.env` + `docker-compose ps` and get `port` from `mysql`
     > - import your DB dump to database
 
-12. install [UMI](https://www.umi-cms.ru/downloads/) in _trial_ mode, `without template`
+11. install [UMI](https://www.umi-cms.ru/downloads/) in _trial_ mode, `without template`
 
     - during the installation fill DB host field as `mysql` and set DB credentials from your `.env` file
 
@@ -123,19 +123,28 @@
 
 > frontend **can skip** this step `>>`
 
-### Bitbucket.org
-- add `PROD_USERNAME` environment variable inside VCS system
-- `bitbucket-pipelines.yml` -- replace `PROJECT` with the name of you project folder / domain name of you dev env
-
 ### GitHub.com
 - add `DEPLOY_USER` / `DEPLOY_KEY` (private) and `SLACK_BOT_TOKEN` to secrets section
 - `.github/workflows/deploy-pipelines.yml` -- replace `PROJECT` with the name of you project folder / domain name of you dev env
 - fill all necessary variables in `env` section
 
-After init commit change _deploy mode_ for your env branch `DEP_MODE="init -v --insecure"` from `init` to `push`
+### inetstudio.gitlab.yandexcloud.net
+- add `DEPLOY_USER` / `STAGING_PRIVATE_KEY` to CI/CD variables section
+- `.gitlab-ci.yml` -- replace `PROJECT` with the name of you project folder / domain name of you dev env
+- fill all necessary variables in `variables` section
 
 > `<<` frontend **can skip** this step
-## <p><strong>Prepare Sentry.io monitoring integration</strong></p> <span style="color:red">Temporary inactive</span>
+## <p><strong>Prepare Sentry.io monitoring integration</strong></p>
 
 - create 2 separate projects for `frontend` and `backend` teams with the `PROJECT-frontend/backend` names
-- add `VERSION_POSTFIX` environment variable inside _VCS_ system (bitbucket.org) which will represent your `PROJECT` name
+- add `VERSION_POSTFIX` environment variable inside _VCS_ system which will represent your `PROJECT` name
+
+## Troubleshooting
+
+- In case of `403 error` (UMI **IS** `installed`) go to nginx cli in DockerDesktop **OR** in linux / WSL terminal and type `chmod -R 775 [folder name]`
+- In case of `504 error` during UMI installation go to **docker/nginx/templates** folder and add new line `fastcgi_read_timeout 240`
+  inside `location ~ \.php$ { ... }` section of template file.
+### ARM processors (MacBooks, BitBlaze etc.) issues
+- In case of MySQL errors when building containers (using `docker compose up -d` command), \
+  try to change `image` in **/docker/mysql/Dockerfile** to `FROM mariadb:10.8`
+  also check that COMPOSE_PROJECT_NAME don't contain `“.”` else replace it with `“-”`

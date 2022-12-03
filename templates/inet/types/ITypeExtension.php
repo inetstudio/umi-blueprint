@@ -10,4 +10,9 @@
          * Запускает выполнение методов, расширяющих типы данных
          */
         public function execute();
+
+        /**
+         * @return int
+         */
+        public function getPriority(): int;
     }

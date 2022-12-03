@@ -4,11 +4,12 @@ name: Deployment workflow
 # Environment variables
 env:
   DEV_HOST: inet.{studio}|{digital}
-  DEV_PATH: /var/www/PROJECT.inet.{studio}|{digital}/
+  DEV_PATH: /var/www/*PROJECT*.inet.{studio}|{digital}/
   PROD_HOST: --
   PROD_PATH: --
-  ASSETS_PATH: ./templates/PROJECT/public/
+  ASSETS_PATH: ./templates/*PROJECT*/public/
   SLACK_CHANNEL_ID: ''
+  SENTRY_PROJECT: #sentry-project-id
 
 on:
   push:
@@ -25,21 +26,36 @@ jobs:
     outputs:
       HOST: ${{ steps.variables.outputs.HOST }}
       SSH_PATH: ${{ steps.variables.outputs.SSH_PATH }}
+      SENTRY_ENV: ${{ steps.variables.outputs.SENTRY_ENV }}
+      SENTRY_VERSION: ${{ steps.variables.outputs.SENTRY_VERSION }}
 
     steps:
-    - name: Store variables in outputs
-      id: variables
-      run: |
-        if [[ ${{ github.ref_name }} == 'production' ]]; then
-          export HOST=$PROD_HOST
-          export SSH_PATH=$PROD_PATH
-        else
-          export HOST=$DEV_HOST
-          export SSH_PATH=$DEV_PATH
-        fi
+      - name: Make deploy version
+        if: github.ref_name == 'production'
+        id: version
+        run: |
+          export DEP_VERSION=$(TZ=":Europe/Moscow" date +v%y.%-m.%-d%-H%M)
+          echo "DEP_VERSION=$DEP_VERSION" >> $GITHUB_OUTPUT
 
-        echo "::set-output name=HOST::$HOST"
-        echo "::set-output name=SSH_PATH::$SSH_PATH"
+      - name: Store variables in outputs
+        id: variables
+        run: |
+          if [[ ${{ github.ref_name }} == 'production' ]]; then
+            echo "HOST=$PROD_HOST" >> $GITHUB_OUTPUT
+            echo "SSH_PATH=$PROD_PATH" >> $GITHUB_OUTPUT
+            echo "SENTRY_ENV=production" >> $GITHUB_OUTPUT
+            echo "SENTRY_VERSION=${{ steps.version.outputs.DEP_VERSION }}-$SENTRY_PROJECT" >> $GITHUB_OUTPUT
+          else
+            echo "HOST=$DEV_HOST" >> $GITHUB_OUTPUT
+            echo "SSH_PATH=$DEV_PATH" >> $GITHUB_OUTPUT
+            echo "SENTRY_ENV=test" >> $GITHUB_OUTPUT
+            echo "SENTRY_VERSION=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+            if [[ ${{ github.ref_name }} =~ 'env/' ]]; then
+              export BRANCH=$(echo "${{ github.ref_name }}" | sed -e 's#^.*/##')
+              echo "SSH_PATH=$DEV_PATH$BRANCH.$DEV_DOMAIN/" >> $GITHUB_OUTPUT
+            fi
+          fi
 
   deploy-ssh:
     name: Deploy to server using rsync
@@ -57,7 +73,7 @@ jobs:
       - name: rsync deployments
         uses: burnett01/rsync-deployments@5.2
         with:
-          switches: -rlz --verbose --progress --exclude-from=".git-ftp-ignore" --exclude=".git*"
+          switches: -lrc --chmod=g=rwx --verbose --progress --exclude-from=".git-ftp-ignore" --exclude=".git*"
           remote_host: ${{ needs.define-variables.outputs.HOST }}
           remote_path: ${{ needs.define-variables.outputs.SSH_PATH }}
           remote_user: ${{ secrets.deploy_user }}
@@ -79,6 +95,16 @@ jobs:
             export ENVS_PATH=$ENVS_PATH
             cd ${{ needs.define-variables.outputs.SSH_PATH }}
             bash ./deploy-out.sh
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ env.SENTRY_PROJECT }}
+        with:
+          environment: ${{ needs.define-variables.outputs.SENTRY_ENV }}
+          version: ${{ needs.define-variables.outputs.SENTRY_VERSION }}
 
   build-and-deploy-assets:
     name: Build and deploy assets to server using SSH
@@ -110,7 +136,7 @@ jobs:
           HOST: ${{ needs.define-variables.outputs.HOST }}
           SSH_PATH: ${{ needs.define-variables.outputs.SSH_PATH }}
         run: cd $ASSETS_PATH && rsync -e "ssh -i $HOME/.ssh/id_rsa -o StrictHostKeyChecking=no"
-          -rlp --compress --delete . ${{ secrets.deploy_user }}@$HOST:$SSH_PATH$ASSETS_PATH
+          -lrc --chmod=g=rwx --compress --delete . ${{ secrets.deploy_user }}@$HOST:$SSH_PATH$ASSETS_PATH
 
   slack-notifications:
     name: Send status notification to Slack after all the jobs are finished
@@ -118,40 +144,9 @@ jobs:
     needs: [deploy-ssh, build-and-deploy-assets]
     if: always()
     steps:
-      - name: Get short SHA & formatted commit
-        id: short
-        run: |
-          export commit_header=$(echo "${{ github.event.pull_request.title || github.event.head_commit.message }}" | sed 's/\n/\\n/g')
-          echo "::set-output name=sha7::$(echo ${{ github.sha }} | cut -c1-7)"
-          echo "::set-output name=commit_header::$commit_header"
-
-      - name: Post notification to a Slack channel
-        uses: slackapi/slack-github-action@v1.16.0
+      - uses: inetstudio/github-to-slack-action@v1.3.2
         with:
-          # Slack channel id, channel name, or user id to post message.
-          channel-id: $SLACK_CHANNEL_ID
-          # For posting a rich message using Block Kit
-          payload: |
-            {
-              "attachments": [
-                 {
-                   "mrkdwn_in": ["text", "pretext"],
-                   "color": "${{ env.SLACK_COLOR }}",
-                   "pretext": "${{ env.SLACK_ICON }} Deployment to *${{ github.ref_name }}* _${{ env.JOBS_STATUS }}_. (<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }} #${{ github.run_number }}>)",
-                   "author_name": "${{ env.COMMIT_USER }}",
-                   "author_link": "${{ github.event.sender.html_url }}",
-                   "author_icon": "${{ github.event.sender.avatar_url }}",
-                   "text": "`<${{ env.COMMIT_URL }}|${{ env.SHA7 }}>` ${{ steps.short.outputs.commit_header }}",
-                   "footer": "${{ github.event.repository.name }}",
-                   "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png"
-                 }
-              ]
-            }
+          channel-id: ${{ env.SLACK_CHANNEL_ID }}
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_COLOR: ${{ contains(needs.*.result, 'failure') && 'danger' || 'good' }}
-          SLACK_ICON: ${{ contains(needs.*.result, 'failure') && ':no_entry:' || ':white_check_mark:' }}
-          COMMIT_URL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-          COMMIT_USER: ${{ github.event.pull_request.user.login || github.event.head_commit.author.name }}
-          JOBS_STATUS: ${{ contains(needs.*.result, 'failure') && 'failed' || 'successful' }}
-          SHA7: ${{ steps.short.outputs.sha7 }}
+          FAILED_RUN: ${{ contains(needs.*.result, 'failure') }}
